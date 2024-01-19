@@ -8,8 +8,17 @@ class RuzzyTest < Test::Unit::TestCase
     assert_true(result)
   end
 
-  def test_c_dummy_test_one_input
-    dummy = Proc.new {|data| Ruzzy.c_dummy_test_one_input(data)}
+  def test_c_dummy_test_one_input_proc
+    dummy = proc {|data| Ruzzy.c_dummy_test_one_input(data)}
+
+    result = dummy.call("test")
+    expected = 0
+
+    assert_equal(result, expected)
+  end
+
+  def test_c_dummy_test_one_input_lambda
+    dummy = lambda {|data| Ruzzy.c_dummy_test_one_input(data)}
 
     result = dummy.call("test")
     expected = 0
