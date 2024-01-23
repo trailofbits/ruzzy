@@ -45,12 +45,15 @@ ENV MAKE "make --environment-overrides V=1"
 # 2. The Ruby interpreter leaks data, so ignore these for now
 ENV ASAN_OPTIONS "allocator_may_return_null=1,detect_leaks=0"
 
-COPY . ruzzy/
+# Split dependency and application code installation for improved caching
+COPY ruzzy.gemspec Gemfile ruzzy/
 WORKDIR ruzzy/
 RUN bundler3.1 install
+
+COPY . .
 RUN rake compile
 
 ENV LD_PRELOAD "$CLANG_DIR/lib/clang/17/lib/$CLANG_ARCH-unknown-linux-gnu/libclang_rt.asan.so"
 
-ENTRYPOINT ["ruby", "bin/dummy.rb"]
+ENTRYPOINT ["ruby", "-Ilib", "bin/dummy.rb"]
 CMD ["-help=1"]
