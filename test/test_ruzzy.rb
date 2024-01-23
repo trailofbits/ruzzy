@@ -1,26 +1,28 @@
-require "ruzzy"
-require "test/unit"
+# frozen_string_literal: true
+
+require 'ruzzy'
+require 'test/unit'
 
 class RuzzyTest < Test::Unit::TestCase
   def test_c_libfuzzer_is_loaded
-    result = Ruzzy.c_libfuzzer_is_loaded()
+    result = Ruzzy.c_libfuzzer_is_loaded
 
     assert_true(result)
   end
 
   def test_c_dummy_test_one_input_proc
-    dummy_test_one_input = proc {|data| Ruzzy.c_dummy_test_one_input(data)}
+    dummy_test_one_input = proc { |data| Ruzzy.c_dummy_test_one_input(data) }
 
-    result = dummy_test_one_input.call("test")
+    result = dummy_test_one_input.call('test')
     expected = 0
 
     assert_equal(result, expected)
   end
 
   def test_c_dummy_test_one_input_lambda
-    dummy_test_one_input = lambda {|data| Ruzzy.c_dummy_test_one_input(data)}
+    dummy_test_one_input = ->(data) { Ruzzy.c_dummy_test_one_input(data) }
 
-    result = dummy_test_one_input.call("test")
+    result = dummy_test_one_input.call('test')
     expected = 0
 
     assert_equal(result, expected)
@@ -28,7 +30,7 @@ class RuzzyTest < Test::Unit::TestCase
 
   def test_fuzz_without_proc
     assert_raise(RuntimeError) do
-      Ruzzy.fuzz("not a proc")
+      Ruzzy.fuzz('not a proc')
     end
   end
 end
