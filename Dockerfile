@@ -17,6 +17,7 @@ RUN mkdir $APP_DIR
 RUN mkdir $CLANG_DIR
 WORKDIR $APP_DIR
 
+ARG CLANG_ARCH=aarch64
 ARG CLANG_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-aarch64-linux-gnu.tar.xz
 ARG CLANG_CHECKSUM=6dd62762285326f223f40b8e4f2864b5c372de3f7de0731cb7cd55ca5287b75a
 
@@ -35,7 +36,7 @@ ENV LDSHAREDXX "$CLANG_DIR/bin/clang++ -shared"
 ENV ASAN_SYMBOLIZER_PATH "$CLANG_DIR/bin/llvm-symbolizer"
 
 # LOCAL_LIBS is supported by the Ruby "mkmf" library and C extension Makefile
-ENV LOCAL_LIBS "$CLANG_DIR/lib/clang/17/lib/aarch64-unknown-linux-gnu/libclang_rt.fuzzer_no_main.a"
+ENV LOCAL_LIBS "$CLANG_DIR/lib/clang/17/lib/$CLANG_ARCH-unknown-linux-gnu/libclang_rt.fuzzer_no_main.a"
 
 # Respect ENV variables when compiling C extension, like LOCAL_LIBS above
 ENV MAKE "make --environment-overrides V=1"
@@ -49,7 +50,7 @@ WORKDIR ruzzy/
 RUN gem build ruzzy.gemspec
 RUN gem install --verbose ruzzy-*.gem
 
-ENV LD_PRELOAD "$CLANG_DIR/lib/clang/17/lib/aarch64-unknown-linux-gnu/libclang_rt.asan.so"
+ENV LD_PRELOAD "$CLANG_DIR/lib/clang/17/lib/$CLANG_ARCH-unknown-linux-gnu/libclang_rt.asan.so"
 
 ENTRYPOINT ["ruby", "bin/dummy.rb"]
 CMD ["-help=1"]
