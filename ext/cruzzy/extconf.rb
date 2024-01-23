@@ -1,3 +1,3 @@
 require 'mkmf'
 
-create_makefile('cruzzy')
+create_makefile('cruzzy/cruzzy')

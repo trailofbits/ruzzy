@@ -9,18 +9,18 @@ class RuzzyTest < Test::Unit::TestCase
   end
 
   def test_c_dummy_test_one_input_proc
-    dummy = proc {|data| Ruzzy.c_dummy_test_one_input(data)}
+    dummy_test_one_input = proc {|data| Ruzzy.c_dummy_test_one_input(data)}
 
-    result = dummy.call("test")
+    result = dummy_test_one_input.call("test")
     expected = 0
 
     assert_equal(result, expected)
   end
 
   def test_c_dummy_test_one_input_lambda
-    dummy = lambda {|data| Ruzzy.c_dummy_test_one_input(data)}
+    dummy_test_one_input = lambda {|data| Ruzzy.c_dummy_test_one_input(data)}
 
-    result = dummy.call("test")
+    result = dummy_test_one_input.call("test")
     expected = 0
 
     assert_equal(result, expected)

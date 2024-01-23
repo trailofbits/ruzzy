@@ -1,5 +1,5 @@
 require "ruzzy"
 
-dummy = lambda {|data| Ruzzy.c_dummy_test_one_input(data)}
+dummy_test_one_input = lambda {|data| Ruzzy.c_dummy_test_one_input(data)}
 
-Ruzzy.fuzz(dummy)
+Ruzzy.fuzz(dummy_test_one_input)

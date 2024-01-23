@@ -43,7 +43,7 @@ static int proc_caller(const uint8_t *data, size_t size)
     return NUM2INT(result);
 }
 
-static VALUE c_fuzz(VALUE self, VALUE args, VALUE proc)
+static VALUE c_fuzz(VALUE self, VALUE test_one_input, VALUE args)
 {
     char *argv[MAX_ARGS_SIZE];
     int args_len = RARRAY_LEN(args);
@@ -65,11 +65,11 @@ static VALUE c_fuzz(VALUE self, VALUE args, VALUE proc)
         );
     }
 
-    if (!rb_obj_is_proc(proc)) {
+    if (!rb_obj_is_proc(test_one_input)) {
         rb_raise(rb_eRuntimeError, "expected a proc or lambda");
     }
 
-    PROC_HOLDER = proc;
+    PROC_HOLDER = test_one_input;
 
     for (int i = 0; i < args_len; i++) {
         VALUE arg = RARRAY_PTR(args)[i];

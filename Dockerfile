@@ -34,23 +34,22 @@ ENV LDSHARED "$CLANG_DIR/bin/clang -shared"
 ENV LDSHAREDXX "$CLANG_DIR/bin/clang++ -shared"
 ENV ASAN_SYMBOLIZER_PATH "$CLANG_DIR/bin/llvm-symbolizer"
 
-# This variable is supported by the Ruby "mkmf" library and C extension Makefile
-ENV LOCAL_LIBS "/app/clang/lib/clang/17/lib/aarch64-unknown-linux-gnu/libclang_rt.fuzzer_no_main.a"
+# LOCAL_LIBS is supported by the Ruby "mkmf" library and C extension Makefile
+ENV LOCAL_LIBS "$CLANG_DIR/lib/clang/17/lib/aarch64-unknown-linux-gnu/libclang_rt.fuzzer_no_main.a"
 
 # Respect ENV variables when compiling C extension, like LOCAL_LIBS above
 ENV MAKE "make --environment-overrides V=1"
 
-# The Ruby interpreter leaks data, so ignore these for now
-ENV ASAN_OPTIONS "detect_leaks=0"
+# 1. Skip memory allocation failures for now, they are common, and low impact (DoS)
+# 2. The Ruby interpreter leaks data, so ignore these for now
+ENV ASAN_OPTIONS "allocator_may_return_null=1,detect_leaks=0"
 
 COPY . ruzzy/
 WORKDIR ruzzy/
 RUN gem build ruzzy.gemspec
-RUN gem install ruzzy-*.gem
-RUN rake clean
-RUN rake compile
+RUN gem install --verbose ruzzy-*.gem
 
-ENV LD_PRELOAD "/app/clang/lib/clang/17/lib/aarch64-unknown-linux-gnu/libclang_rt.asan.so"
+ENV LD_PRELOAD "$CLANG_DIR/lib/clang/17/lib/aarch64-unknown-linux-gnu/libclang_rt.asan.so"
 
 ENTRYPOINT ["ruby", "bin/dummy.rb"]
 CMD ["-help=1"]
