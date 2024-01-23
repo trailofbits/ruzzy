@@ -12,4 +12,5 @@ Gem::Specification.new do |s|
   s.extensions  = %w[ext/cruzzy/extconf.rb]
 
   s.add_development_dependency "rake", '~> 13.0'
+  s.add_development_dependency "rake-compiler", '~> 1.2'
 end

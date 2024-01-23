@@ -47,8 +47,8 @@ ENV ASAN_OPTIONS "allocator_may_return_null=1,detect_leaks=0"
 
 COPY . ruzzy/
 WORKDIR ruzzy/
-RUN gem build ruzzy.gemspec
-RUN gem install --verbose ruzzy-*.gem
+RUN bundler3.1 install
+RUN rake compile
 
 ENV LD_PRELOAD "$CLANG_DIR/lib/clang/17/lib/$CLANG_ARCH-unknown-linux-gnu/libclang_rt.asan.so"
 
