@@ -3,6 +3,7 @@ FROM debian:12-slim
 RUN apt update && apt install -y \
     binutils \
     gcc \
+    g++ \
     libc-dev \
     make \
     ruby \
@@ -45,9 +46,9 @@ ENV ASAN_STRIPPED_LIB "/tmp/libclang_rt.asan.a"
 ENV ASAN_MERGED_LIB "/tmp/asan_with_fuzzer.so"
 
 # https://github.com/google/atheris/blob/master/native_extension_fuzzing.md#why-this-is-necessary
-RUN cp "$ASAN_LIB" /tmp
+RUN cp "$ASAN_LIB" "$ASAN_STRIPPED_LIB"
 RUN ar d "$ASAN_STRIPPED_LIB" asan_preinit.cc.o asan_preinit.cpp.o
-RUN "$CC" \
+RUN "$CXX" \
     -Wl,--whole-archive \
     "$FUZZER_NO_MAIN_LIB" \
     "$ASAN_STRIPPED_LIB" \

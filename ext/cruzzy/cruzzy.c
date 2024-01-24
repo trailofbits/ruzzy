@@ -117,7 +117,7 @@ static VALUE c_dummy_test_one_input(VALUE self, VALUE data)
 
 void Init_cruzzy()
 {
-    VALUE ruzzy = rb_const_get(rb_cObject, rb_intern("Ruzzy"));;
+    VALUE ruzzy = rb_const_get(rb_cObject, rb_intern("Ruzzy"));
     rb_define_module_function(ruzzy, "c_fuzz", &c_fuzz, 2);
     rb_define_module_function(ruzzy, "c_libfuzzer_is_loaded", &c_libfuzzer_is_loaded, 0);
     rb_define_module_function(ruzzy, "c_dummy_test_one_input", &c_dummy_test_one_input, 1);
