@@ -2,9 +2,9 @@
 
 A Ruby C extension fuzzer.
 
-Ruzzy is based on Google's [Atheris Python fuzzer](https://github.com/google/atheris). Unlike Atheris, Ruzzy is focused on fuzzing Ruby C extensions and not Ruby code itself. This may change in the future as the project gains traction.
+Ruzzy is based on Google's [Atheris](https://github.com/google/atheris), a Python fuzzer. Unlike Atheris, Ruzzy is focused on fuzzing Ruby C extensions and not Ruby code itself. This may change in the future as the project gains traction.
 
-# Installing
+# Building
 
 Ruzzy relies on Docker for both development and production fuzzer usage.
 
