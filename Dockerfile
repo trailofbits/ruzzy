@@ -21,6 +21,10 @@ ARG CLANG_ARCH=aarch64
 ARG CLANG_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-aarch64-linux-gnu.tar.xz
 ARG CLANG_CHECKSUM=6dd62762285326f223f40b8e4f2864b5c372de3f7de0731cb7cd55ca5287b75a
 
+ENV CLANG_ARCH=${CLANG_ARCH}
+ENV CLANG_URL=${CLANG_URL}
+ENV CLANG_CHECKSUM=${CLANG_CHECKSUM}
+
 ENV CLANG_FILE clang.tar.xz
 RUN wget -q -O $CLANG_FILE $CLANG_URL && \
     echo "$CLANG_CHECKSUM  $CLANG_FILE" | sha256sum -c - && \
@@ -35,10 +39,29 @@ ENV LDSHARED "$CLANG_DIR/bin/clang -shared"
 ENV LDSHAREDXX "$CLANG_DIR/bin/clang++ -shared"
 ENV ASAN_SYMBOLIZER_PATH "$CLANG_DIR/bin/llvm-symbolizer"
 
-# LOCAL_LIBS is supported by the Ruby "mkmf" library and C extension Makefile
-ENV LOCAL_LIBS "$CLANG_DIR/lib/clang/17/lib/$CLANG_ARCH-unknown-linux-gnu/libclang_rt.fuzzer_no_main.a"
+ENV FUZZER_NO_MAIN_LIB "$CLANG_DIR/lib/clang/17/lib/$CLANG_ARCH-unknown-linux-gnu/libclang_rt.fuzzer_no_main.a"
+ENV ASAN_LIB "$CLANG_DIR/lib/clang/17/lib/$CLANG_ARCH-unknown-linux-gnu/libclang_rt.asan.a"
+ENV ASAN_STRIPPED_LIB "/tmp/libclang_rt.asan.a"
+ENV ASAN_MERGED_LIB "/tmp/asan_with_fuzzer.so"
 
-# Respect ENV variables when compiling C extension, like LOCAL_LIBS above
+# https://github.com/google/atheris/blob/master/native_extension_fuzzing.md#why-this-is-necessary
+RUN cp "$ASAN_LIB" /tmp
+RUN ar d "$ASAN_STRIPPED_LIB" asan_preinit.cc.o asan_preinit.cpp.o
+RUN "$CC" \
+    -Wl,--whole-archive \
+    "$FUZZER_NO_MAIN_LIB" \
+    "$ASAN_STRIPPED_LIB" \
+    -Wl,--no-whole-archive \
+    -lpthread -ldl -shared \
+    -o "$ASAN_MERGED_LIB"
+
+# The LOCAL_LIBS variable allows linking arbitrary libraries into Ruby C
+# extensions. It is supported by the Ruby mkmf library and C extension Makefile.
+# For more information, see https://github.com/ruby/ruby/blob/master/lib/mkmf.rb.
+ENV LOCAL_LIBS=${FUZZER_NO_MAIN_LIB}
+
+# The MAKE variable allows overwriting the make command at runtime. This forces the
+# Ruby C extension to respect ENV variables when compiling, like LOCAL_LIBS above.
 ENV MAKE "make --environment-overrides V=1"
 
 # 1. Skip memory allocation failures for now, they are common, and low impact (DoS)
@@ -53,7 +76,5 @@ RUN bundler3.1 install
 COPY . .
 RUN rake compile
 
-ENV LD_PRELOAD "$CLANG_DIR/lib/clang/17/lib/$CLANG_ARCH-unknown-linux-gnu/libclang_rt.asan.so"
-
-ENTRYPOINT ["ruby", "-Ilib", "bin/dummy.rb"]
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["-help=1"]
