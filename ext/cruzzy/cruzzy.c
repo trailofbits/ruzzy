@@ -40,6 +40,13 @@ static int proc_caller(const uint8_t *data, size_t size)
         return 0;
     }
 
+    if (!FIXNUM_P(result)) {
+        rb_raise(
+            rb_eTypeError,
+            "fuzz target function did not return an integer or nil"
+        );
+    }
+
     return NUM2INT(result);
 }
 

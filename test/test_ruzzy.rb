@@ -28,6 +28,19 @@ class RuzzyTest < Test::Unit::TestCase
     assert_equal(result, expected)
   end
 
+  def test_c_dummy_test_one_input_invalid_return
+    omit("This test calls LLVMFuzzerRunDriver, which we don't have a good harness for yet")
+
+    dummy_test_one_input = lambda do |data|
+      Ruzzy.c_dummy_test_one_input(data)
+      'not an integer or nil'
+    end
+
+    assert_raise(TypeError) do
+      Ruzzy.fuzz(dummy_test_one_input)
+    end
+  end
+
   def test_fuzz_without_proc
     assert_raise(RuntimeError) do
       Ruzzy.fuzz('not a proc')
