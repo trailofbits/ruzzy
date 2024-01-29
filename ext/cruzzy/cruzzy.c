@@ -1,13 +1,21 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <signal.h>
+#include <string.h>
+#include <unistd.h>
 
 #include <ruby.h>
 
 // 128 arguments should be enough for anybody
 #define MAX_ARGS_SIZE 128
 
-int LLVMFuzzerRunDriver(int *argc, char ***argv, int (*cb)(const uint8_t *data, size_t size));
+int LLVMFuzzerRunDriver(
+    int *argc,
+    char ***argv,
+    int (*cb)(const uint8_t *data, size_t size)
+);
 
 VALUE PROC_HOLDER = Qnil;
 
@@ -24,6 +32,29 @@ static VALUE c_libfuzzer_is_loaded(VALUE self)
     dlclose(self_lib);
 
     return sym ? Qtrue : Qfalse;
+}
+
+int ATEXIT_RETCODE = 0;
+
+static void ruzzy_exit() {
+     _exit(ATEXIT_RETCODE);
+}
+
+static void graceful_exit(int code) {
+    // Disable libFuzzer's atexit
+    ATEXIT_RETCODE = code;
+    atexit(ruzzy_exit);
+    exit(code);
+}
+
+static void sigint_handler(int signal) {
+    fprintf(
+        stderr,
+        "Signal %d (%s) received. Exiting...\n",
+        signal,
+        strsignal(signal)
+    );
+    graceful_exit(signal);
 }
 
 static int proc_caller(const uint8_t *data, size_t size)
@@ -124,6 +155,11 @@ static VALUE c_dummy_test_one_input(VALUE self, VALUE data)
 
 void Init_cruzzy()
 {
+    if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+        fprintf(stderr, "Could not set SIGINT signal handler\n");
+        exit(1);
+    }
+
     VALUE ruzzy = rb_const_get(rb_cObject, rb_intern("Ruzzy"));
     rb_define_module_function(ruzzy, "c_fuzz", &c_fuzz, 2);
     rb_define_module_function(ruzzy, "c_libfuzzer_is_loaded", &c_libfuzzer_is_loaded, 0);

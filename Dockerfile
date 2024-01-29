@@ -32,10 +32,11 @@ RUN wget -q -O $CLANG_FILE $CLANG_URL && \
     tar xf $CLANG_FILE -C $CLANG_DIR --strip-components 1 && \
     rm $CLANG_FILE
 
+# https://github.com/google/sanitizers/wiki/AddressSanitizerFlags
 ENV CC "$CLANG_DIR/bin/clang"
-ENV CFLAGS "-fsanitize=address,undefined,fuzzer-no-link -fPIC -g"
+ENV CFLAGS "-fsanitize=address,fuzzer-no-link -fno-omit-frame-pointer -fno-common -fPIC -g -O0"
 ENV CXX "$CLANG_DIR/bin/clang++"
-ENV CXXFLAGS "-fsanitize=address,undefined,fuzzer-no-link -fPIC -g"
+ENV CXXFLAGS "-fsanitize=address,fuzzer-no-link -fno-omit-frame-pointer -fno-common -fPIC -g -O0"
 ENV LDSHARED "$CLANG_DIR/bin/clang -shared"
 ENV LDSHAREDXX "$CLANG_DIR/bin/clang++ -shared"
 ENV ASAN_SYMBOLIZER_PATH "$CLANG_DIR/bin/llvm-symbolizer"
@@ -67,7 +68,7 @@ ENV MAKE "make --environment-overrides V=1"
 
 # 1. Skip memory allocation failures for now, they are common, and low impact (DoS)
 # 2. The Ruby interpreter leaks data, so ignore these for now
-ENV ASAN_OPTIONS "allocator_may_return_null=1,detect_leaks=0"
+ENV ASAN_OPTIONS "allocator_may_return_null=1:detect_leaks=0:use_sigaltstack=0"
 
 # Split dependency and application code installation for improved caching
 COPY ruzzy.gemspec Gemfile ruzzy/
