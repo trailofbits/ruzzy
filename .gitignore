@@ -57,3 +57,8 @@ build-iPhoneSimulator/
 
 # Vim swap files
 *.sw[op]
+
+# libFuzzer output files
+crash-*
+leak-*
+timeout-*

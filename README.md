@@ -16,6 +16,17 @@ docker build --tag ruzzy .
 
 _You may want to grab a cup of coffee, the initial build can take a while._
 
+By default, this will build a Docker image for AArch64 architectures (e.g. M-series MacBooks). If you need to run Ruzzy on other architectures, like x86, you can use the following [build arguments](https://docs.docker.com/build/guide/build-args/):
+
+```
+docker build \
+    --build-arg CLANG_ARCH=x86_64 \
+    --build-arg CLANG_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz \
+    --build-arg CLANG_CHECKSUM=884ee67d647d77e58740c1e645649e29ae9e8a6fe87c1376be0f3a30f3cc9ab3 \
+    --tag ruzzy \
+    .
+```
+
 # Using
 
 ## Getting started
@@ -146,9 +157,15 @@ rubocop
   - https://guides.rubygems.org/gems-with-extensions/
   - https://www.rubyguides.com/2018/03/write-ruby-c-extension/
   - https://rubyreferences.github.io/rubyref/advanced/extensions.html
+  - https://silverhammermba.github.io/emberb/c/
   - https://ruby-doc.org/3.3.0/stdlibs/mkmf/MakeMakefile.html
   - https://github.com/flavorjones/ruby-c-extensions-explained
   - https://github.com/ruby/ruby/blob/v3_1_2/lib/mkmf.rb
+- Ruby fuzzing
+  - https://github.com/twistlock/kisaten
+  - https://github.com/richo/afl-ruby
+  - https://z2-2z.github.io/2024/jan/16/fuzzing-ruby-c-extensions-with-coverage-and-asan.html
+  - https://bsidessf2018.sched.com/event/E6jC/fuzzing-ruby-and-c-extensions
 - Atheris
   - https://github.com/google/atheris/blob/master/native_extension_fuzzing.md
   - https://security.googleblog.com/2020/12/how-atheris-python-fuzzer-works.html

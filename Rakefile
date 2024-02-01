@@ -12,3 +12,7 @@ end
 Rake::ExtensionTask.new 'cruzzy' do |ext|
   ext.lib_dir = 'lib/cruzzy'
 end
+
+Rake::ExtensionTask.new 'cruzzy/dummy' do |ext|
+  ext.lib_dir = 'lib/cruzzy/dummy'
+end

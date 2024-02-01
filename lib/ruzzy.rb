@@ -3,6 +3,7 @@
 # A Ruby C extension fuzzer
 module Ruzzy
   require 'cruzzy/cruzzy'
+  require 'cruzzy/dummy/dummy'
 
   DEFAULT_ARGS = [$PROGRAM_NAME] + ARGV
 
