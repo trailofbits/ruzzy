@@ -4,13 +4,14 @@ require 'mkmf'
 require 'open3'
 require 'tempfile'
 
-CLANG = 'clang'
-FUZZER_NO_MAIN_LIB = 'FUZZER_NO_MAIN_LIB'
+CC = 'clang'
+CXX = 'clang++'
+FUZZER_NO_MAIN_LIB_ENV = 'FUZZER_NO_MAIN_LIB'
 
-find_executable(CLANG)
+find_executable(CC)
 
 def get_clang_file_name(file_name)
-  stdout, status = Open3.capture2(CLANG, '--print-file-name', file_name)
+  stdout, status = Open3.capture2(CC, '--print-file-name', file_name)
   status.success? && File.exist?(stdout.strip) ? stdout.strip : false
 end
 
@@ -19,16 +20,20 @@ def merge_asan_libfuzzer_lib(asan_lib, fuzzer_no_main_lib)
   Tempfile.create do |file|
     file.write(File.open(asan_lib).read)
 
-    stdout, status = Open3.capture2(
+    _, status = Open3.capture2(
       'ar',
       'd',
       file.path,
       'asan_preinit.cc.o',
       'asan_preinit.cpp.o'
     )
+    unless status.success?
+      puts("The 'ar' archive command failed.")
+      exit(1)
+    end
 
-    stdout, status = Open3.capture2(
-      ENV['CXX'],
+    _, status = Open3.capture2(
+      CXX,
       '-Wl,--whole-archive',
       fuzzer_no_main_lib,
       file.path,
@@ -39,6 +44,10 @@ def merge_asan_libfuzzer_lib(asan_lib, fuzzer_no_main_lib)
       '-o',
       'asan_with_fuzzer.so'
     )
+    unless status.success?
+      puts("The 'clang' shared object merging command failed.")
+      exit(1)
+    end
   end
 end
 
@@ -50,11 +59,11 @@ fuzzer_no_main_libs = [
 fuzzer_no_main_lib = fuzzer_no_main_libs.map { |lib| get_clang_file_name(lib) }.find(&:itself)
 
 unless fuzzer_no_main_lib
-  puts("Could not find fuzzer_no_main using #{CLANG}.")
-  fuzzer_no_main_lib = ENV.fetch(FUZZER_NO_MAIN_LIB, nil)
+  puts("Could not find fuzzer_no_main using #{CC}.")
+  fuzzer_no_main_lib = ENV.fetch(FUZZER_NO_MAIN_LIB_ENV, nil)
   if fuzzer_no_main_lib.nil?
-    puts("Could not find fuzzer_no_main in #{FUZZER_NO_MAIN_LIB}.")
-    puts("Please include #{CLANG} in your path or specify #{FUZZER_NO_MAIN_LIB} ENV variable.")
+    puts("Could not find fuzzer_no_main in #{FUZZER_NO_MAIN_LIB_ENV}.")
+    puts("Please include #{CC} in your path or specify #{FUZZER_NO_MAIN_LIB_ENV} ENV variable.")
     exit(1)
   end
 end
@@ -72,7 +81,7 @@ asan_libs = [
 asan_lib = asan_libs.map { |lib| get_clang_file_name(lib) }.find(&:itself)
 
 unless asan_lib
-  puts("Could not find asan using #{CLANG}.")
+  puts("Could not find asan using #{CC}.")
   exit(1)
 end
 
