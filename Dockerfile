@@ -32,29 +32,11 @@ RUN wget -q -O $CLANG_FILE $CLANG_URL && \
     tar xf $CLANG_FILE -C $CLANG_DIR --strip-components 1 && \
     rm $CLANG_FILE
 
-# https://github.com/google/sanitizers/wiki/AddressSanitizerFlags
-ENV CC="$CLANG_DIR/bin/clang"
-ENV CXX="$CLANG_DIR/bin/clang++"
-ENV LDSHARED="$CLANG_DIR/bin/clang -shared"
-ENV LDSHAREDXX="$CLANG_DIR/bin/clang++ -shared"
-ENV ASAN_SYMBOLIZER_PATH="$CLANG_DIR/bin/llvm-symbolizer"
 ENV PATH="$PATH:$CLANG_DIR/bin"
-
-ENV FUZZER_NO_MAIN_LIB="$CLANG_DIR/lib/clang/17/lib/$CLANG_ARCH-unknown-linux-gnu/libclang_rt.fuzzer_no_main.a"
-ENV ASAN_LIB="$CLANG_DIR/lib/clang/17/lib/$CLANG_ARCH-unknown-linux-gnu/libclang_rt.asan.a"
-ENV ASAN_STRIPPED_LIB="/tmp/libclang_rt.asan.a"
-ENV ASAN_MERGED_LIB="/tmp/asan_with_fuzzer.so"
-
-# https://github.com/google/atheris/blob/master/native_extension_fuzzing.md#why-this-is-necessary
-RUN cp "$ASAN_LIB" "$ASAN_STRIPPED_LIB"
-RUN ar d "$ASAN_STRIPPED_LIB" asan_preinit.cc.o asan_preinit.cpp.o
-RUN "$CXX" \
-    -Wl,--whole-archive \
-    "$FUZZER_NO_MAIN_LIB" \
-    "$ASAN_STRIPPED_LIB" \
-    -Wl,--no-whole-archive \
-    -lpthread -ldl -shared \
-    -o "$ASAN_MERGED_LIB"
+ENV CC="clang"
+ENV CXX="clang++"
+ENV LDSHARED="clang -shared"
+ENV LDSHAREDXX="clang++ -shared"
 
 # The MAKE variable allows overwriting the make command at runtime. This forces the
 # Ruby C extension to respect ENV variables when compiling, like CC, CFLAGS, etc.
@@ -71,7 +53,8 @@ WORKDIR ruzzy/
 RUN bundler3.1 install
 
 COPY . .
-RUN rake compile
+RUN gem build
+RUN gem install --verbose ruzzy-*.gem
 
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["-help=1"]
