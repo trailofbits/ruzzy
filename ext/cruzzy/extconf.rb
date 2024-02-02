@@ -3,6 +3,11 @@
 require 'mkmf'
 require 'open3'
 require 'tempfile'
+require 'rbconfig'
+require 'logger'
+
+LOGGER = Logger.new(STDERR)
+LOGGER.level = ENV.key?('RUZZY_DEBUG') ? Logger::DEBUG : Logger::INFO
 
 # These ENV variables really shouldn't be used because we don't support
 # compilers other than clang, like gcc, etc. Instead prefer to properly include
@@ -13,17 +18,22 @@ require 'tempfile'
 # https://github.com/rubygems/rubygems/issues/1508
 CC = ENV.fetch('CC', 'clang')
 CXX = ENV.fetch('CXX', 'clang++')
+AR = ENV.fetch('AR', 'ar')
 FUZZER_NO_MAIN_LIB_ENV = 'FUZZER_NO_MAIN_LIB'
+
+LOGGER.debug("Ruby CC: #{RbConfig::CONFIG['CC']}")
+LOGGER.debug("Ruby CXX: #{RbConfig::CONFIG['CXX']}")
+LOGGER.debug("Ruby AR: #{RbConfig::CONFIG['AR']}")
 
 find_executable(CC)
 find_executable(CXX)
 
 def get_clang_file_name(file_name)
-  puts("Searching for #{file_name} using #{CC}")
   stdout, status = Open3.capture2(CC, '--print-file-name', file_name)
-  puts("Search command succeeded: #{status.success?}")
-  puts("Search file exists: #{File.exist?(stdout.strip)}") if status.success?
-  status.success? && File.exist?(stdout.strip) ? stdout.strip : false
+  success = status.success?
+  exists = success ? File.exist?(stdout.strip) : false
+  LOGGER.debug("Search for #{file_name} using #{CC}: success=#{success} exists=#{exists}")
+  success && exists ? stdout.strip : false
 end
 
 def merge_asan_libfuzzer_lib(asan_lib, fuzzer_no_main_lib)
@@ -33,20 +43,20 @@ def merge_asan_libfuzzer_lib(asan_lib, fuzzer_no_main_lib)
   Tempfile.create do |file|
     file.write(File.open(asan_lib).read)
 
-    puts("Creating ASAN archive at #{file.path}")
+    LOGGER.debug("Creating ASAN archive at #{file.path}")
     _, status = Open3.capture2(
-      'ar',
+      AR,
       'd',
       file.path,
       'asan_preinit.cc.o',
       'asan_preinit.cpp.o'
     )
     unless status.success?
-      puts("The 'ar' archive command failed.")
+      LOGGER.error("The #{AR} archive command failed.")
       exit(1)
     end
 
-    puts("Merging ASAN at #{file.path} and libFuzzer at #{fuzzer_no_main_lib} to #{merged_output}")
+    LOGGER.debug("Merging ASAN at #{file.path} and libFuzzer at #{fuzzer_no_main_lib} to #{merged_output}")
     _, status = Open3.capture2(
       CXX,
       '-Wl,--whole-archive',
@@ -60,7 +70,7 @@ def merge_asan_libfuzzer_lib(asan_lib, fuzzer_no_main_lib)
       merged_output
     )
     unless status.success?
-      puts("The 'clang' shared object merging command failed.")
+      LOGGER.error("The #{CXX} shared object merging command failed.")
       exit(1)
     end
   end
@@ -74,11 +84,11 @@ fuzzer_no_main_libs = [
 fuzzer_no_main_lib = fuzzer_no_main_libs.map { |lib| get_clang_file_name(lib) }.find(&:itself)
 
 unless fuzzer_no_main_lib
-  puts("Could not find fuzzer_no_main using #{CC}.")
+  LOGGER.warn("Could not find fuzzer_no_main using #{CC}.")
   fuzzer_no_main_lib = ENV.fetch(FUZZER_NO_MAIN_LIB_ENV, nil)
   if fuzzer_no_main_lib.nil?
-    puts("Could not find fuzzer_no_main in #{FUZZER_NO_MAIN_LIB_ENV}.")
-    puts("Please include #{CC} in your path or specify #{FUZZER_NO_MAIN_LIB_ENV} ENV variable.")
+    LOGGER.error("Could not find fuzzer_no_main in #{FUZZER_NO_MAIN_LIB_ENV}.")
+    LOGGER.error("Please include #{CC} in your path or specify #{FUZZER_NO_MAIN_LIB_ENV} ENV variable.")
     exit(1)
   end
 end
@@ -91,7 +101,7 @@ asan_libs = [
 asan_lib = asan_libs.map { |lib| get_clang_file_name(lib) }.find(&:itself)
 
 unless asan_lib
-  puts("Could not find asan using #{CC}.")
+  LOGGER.error("Could not find asan using #{CC}.")
   exit(1)
 end
 

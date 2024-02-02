@@ -54,7 +54,7 @@ RUN bundler3.1 install
 
 COPY . .
 RUN gem build
-RUN gem install --verbose ruzzy-*.gem
+RUN RUZZY_DEBUG=1 gem install --verbose ruzzy-*.gem
 
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["-help=1"]
