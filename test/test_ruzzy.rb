@@ -47,6 +47,22 @@ class RuzzyTest < Test::Unit::TestCase
     end
   end
 
+  def test_fuzz_without_args
+    dummy_test_one_input = ->(data) { Ruzzy.dummy_test_one_input(data) }
+
+    assert_raise(RuntimeError) do
+      Ruzzy.fuzz(dummy_test_one_input, [])
+    end
+  end
+
+  def test_fuzz_with_too_many_args
+    dummy_test_one_input = ->(data) { Ruzzy.dummy_test_one_input(data) }
+
+    assert_raise(RuntimeError) do
+      Ruzzy.fuzz(dummy_test_one_input, Array.new(128, 'test'))
+    end
+  end
+
   def test_ext_path
     assert(Ruzzy.ext_path)
   end
