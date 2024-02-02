@@ -1,9 +1,12 @@
 name: Release
 
-on:
-  push:
-    tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
+# Release manually until release-gem supports something other than rake-release.
+# rake-release is incompatible with GitHub Action workflows that run on tag.
+# https://github.com/rubygems/release-gem/issues/3
+# on:
+#   push:
+#     tags:
+#       - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   release:

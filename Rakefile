@@ -2,7 +2,6 @@
 
 require 'rake/testtask'
 require 'rake/extensiontask'
-require 'rake/release'
 
 Rake::TestTask.new do |t|
   t.verbose = true
