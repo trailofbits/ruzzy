@@ -30,6 +30,6 @@ jobs:
       - name: Run tests
         run: |
           docker run \
-            --env LD_PRELOAD=$(docker run --entrypoint ruby ruzzy -e 'require "ruzzy"; print Ruzzy.ext_path')/asan_with_fuzzer.so \
+            --env LD_PRELOAD=$(docker run --entrypoint ruby ruzzy -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
             --entrypoint rake \
             ruzzy test
