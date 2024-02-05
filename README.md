@@ -4,27 +4,30 @@ A Ruby C extension fuzzer.
 
 Ruzzy is based on Google's [Atheris](https://github.com/google/atheris), a Python fuzzer. Unlike Atheris, Ruzzy is focused on fuzzing Ruby C extensions and not Ruby code itself. This may change in the future as the project gains traction.
 
-# Building
+# Installing
 
-Ruzzy relies on Docker for both development and production fuzzer usage.
+Ruzzy requires a recent version of `clang`, preferably the [latest release](https://github.com/llvm/llvm-project/releases).
 
-You can build the Ruzzy Docker image with the following command:
+Install Ruzzy with the following command:
 
 ```bash
-docker build --tag ruzzy .
+MAKE="make --environment-overrides V=1" \
+CC="/path/to/clang" \
+CXX="/path/to/clang++" \
+LDSHARED="/path/to/clang -shared" \
+LDSHAREDXX="/path/to/clang++ -shared" \
+    gem install ruzzy
 ```
 
-_You may want to grab a cup of coffee, the initial build can take a while._
+There's a lot going on here, so let's break it down:
 
-By default, this will build a Docker image for AArch64 architectures (e.g. M-series MacBooks). If you need to run Ruzzy on other architectures, like x86, you can use the following [build arguments](https://docs.docker.com/build/guide/build-args/):
+- The `MAKE` environment variable overrides the `make` command when compiling the Ruzzy C extension. This tells `make` to respect subsequent environment variables when compiling the extension.
+- The rest of the environment variables are used during compilation to ensure we're using the proper `clang` binaries. This ensures we have the latest `clang` features, which are necessary for proper fuzzing.
 
-```
-docker build \
-    --build-arg CLANG_ARCH=x86_64 \
-    --build-arg CLANG_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz \
-    --build-arg CLANG_CHECKSUM=884ee67d647d77e58740c1e645649e29ae9e8a6fe87c1376be0f3a30f3cc9ab3 \
-    --tag ruzzy \
-    .
+If you run into issues installing, then you can run the following command to get debugging output:
+
+```bash
+RUZZY_DEBUG=1 gem install --verbose ruzzy
 ```
 
 # Using
@@ -33,67 +36,75 @@ docker build \
 
 Ruzzy includes a [toy example](https://llvm.org/docs/LibFuzzer.html#toy-example) to demonstrate how it works.
 
-You can run the example with the following command:
+First, we need to set the following environment variable:
 
 ```bash
-$ docker run -v $(pwd):/tmp/output/ ruzzy -artifact_prefix=/tmp/output/
+export ASAN_OPTIONS="allocator_may_return_null=1:detect_leaks=0:use_sigaltstack=0"
+```
+
+<details>
+<summary>Understanding these options isn't necessary, but if you're curious click here.</summary>
+
+### `ASAN_OPTIONS`
+
+1. Memory allocation failures are common and low impact (DoS), so skip them for now.
+1. Like Python, the Ruby interpreter [leaks data](https://github.com/google/atheris/blob/master/native_extension_fuzzing.md#leak-detection), so ignore these for now.
+1. Ruby recommends [disabling sigaltstack](https://github.com/ruby/ruby/blob/master/doc/contributing/building_ruby.md#building-with-address-sanitizer).
+
+</details>
+
+You can then run the example with the following command:
+
+```bash
+LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy.ext_path')/asan_with_fuzzer.so \
+    ruby -e 'require "ruzzy"; Ruzzy.dummy'
+```
+
+_`LD_PRELOAD` is required for the same reasons [as Atheris](https://github.com/google/atheris/blob/master/native_extension_fuzzing.md#option-a-sanitizerlibfuzzer-preloads). However, unlike `ASAN_OPTIONS`, you probably do not want to `export` it as it may interfere with other programs._
+
+It should quickly produce a crash like the following:
+
+```
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 1250491632
+INFO: Seed: 2527961537
+==3==ERROR: AddressSanitizer: stack-use-after-return on address 0xffffa8000920 at pc 0xffffa96a1a58 bp 0xfffff04ddbb0 sp 0xfffff04ddba8
 ...
-==2==ABORTING
-MS: 1 CopyPart-; base unit: 253420c1158bc6382093d409ce2e9cff5806e980
-0x48,0x49,0x48,0x49,
-HIHI
-artifact_prefix='/tmp/output/'; Test unit written to /tmp/output/crash-53551f97ce4b956f4bfcdeec9eb8d01b5d5533a7
-Base64: SElISQ==
+SUMMARY: AddressSanitizer: stack-use-after-return /var/lib/gems/3.1.0/gems/ruzzy-0.5.0/ext/dummy/dummy.c:18:24 in _c_dummy_test_one_input
+...
+==3==ABORTING
+MS: 1 InsertByte-; base unit: 253420c1158bc6382093d409ce2e9cff5806e980
+0x48,0x49,0x28,
+HI(
+artifact_prefix='./'; Test unit written to ./crash-7099f1508d4048cfe74226869805efa3db24b165
+Base64: SEko
 ```
 
-This should produce a crash relatively quickly. We can inspect the crash with the following command:
+You can re-run the crash case with the following command:
 
 ```bash
-$ xxd crash-53551f97ce4b956f4bfcdeec9eb8d01b5d5533a7
-00000000: 4849 4849                                HIHI
-```
-
-The Docker volume and `-artifact_prefix` flag will persist any crashes within the container into the host's filesystem. This highlights one of Ruzzy's features: flags passed to the Docker container are then [sent to libFuzzer](https://llvm.org/docs/LibFuzzer.html#options). You can use this functionality to re-run crash files:
-
-```bash
-$ docker run -v $(pwd):/tmp/output/ ruzzy /tmp/output/crash-53551f97ce4b956f4bfcdeec9eb8d01b5d5533a7
-INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 1672214264
-...
-Running: /tmp/output/crash-53551f97ce4b956f4bfcdeec9eb8d01b5d5533a7
-...
-Executed /tmp/output/crash-53551f97ce4b956f4bfcdeec9eb8d01b5d5533a7 in 2 ms
-***
-*** NOTE: fuzzing was not performed, you have only
-***       executed the target code on a fixed set of inputs.
-***
-```
-
-You can also use this functionality to pass in a fuzzing corpus:
-
-```bash
-docker run -v $(pwd)/corpus:/tmp/corpus -v $(pwd):/tmp/output/ ruzzy /tmp/corpus
+LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy.ext_path')/asan_with_fuzzer.so \
+    ruby -e 'require "ruzzy"; Ruzzy.dummy' \
+    ./crash-7099f1508d4048cfe74226869805efa3db24b165
 ```
 
 ## Fuzzing third-party libraries
 
-There are two primary ways you may want to fuzz third-party libraries: 1) modify the `Dockerfile` and `entrypoint.sh` script, and/or 2) shell into a Ruzzy container. This section will focus on (2).
-
-You can get a shell in the Ruzzy environment with the following command:
-
-```bash
-docker run -it -v $(pwd):/app/ruzzy --entrypoint /bin/bash ruzzy
-```
-
 Let's fuzz the [`msgpack-ruby`](https://github.com/msgpack/msgpack-ruby) library as an example. First, install the gem:
 
 ```bash
-gem install --verbose msgpack
+MAKE="make --environment-overrides V=1" \
+CC="/path/to/clang" \
+CXX="/path/to/clang++" \
+LDSHARED="/path/to/clang -shared" \
+LDSHAREDXX="/path/to/clang++ -shared" \
+CFLAGS="-fsanitize=address,fuzzer-no-link -fno-omit-frame-pointer -fno-common -fPIC -g" \
+CXXFLAGS="-fsanitize=address,fuzzer-no-link -fno-omit-frame-pointer -fno-common -fPIC -g" \
+    gem install msgpack
 ```
 
-Next, we need a fuzzing target for `msgpack`.
+In addition to the environment variables used when compiling Ruzzy, we're specifying `CFLAGS` and `CXXFLAGS`. These flags aid in the fuzzing process. They enable helpful functionality like an address sanitizer, and improved stack trace information. For more information see [AddressSanitizerFlags](https://github.com/google/sanitizers/wiki/AddressSanitizerFlags).
+
+Next, we need a fuzzing harness for `msgpack`.
 
 The following is a basic example that should be familiar to those with [libFuzzer experience](https://llvm.org/docs/LibFuzzer.html#fuzz-target):
 
@@ -120,16 +131,47 @@ Let's call this file `fuzz_msgpack.rb`.
 You can run this file and start fuzzing with the following command:
 
 ```bash
-LD_PRELOAD=${ASAN_MERGED_LIB} ruby -Ilib fuzz_msgpack.rb
+LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy.ext_path')/asan_with_fuzzer.so \
+    ruby fuzz_msgpack.rb
 ```
 
-_`LD_PRELOAD` is required for the same reasons [as Atheris](https://github.com/google/atheris/blob/master/native_extension_fuzzing.md#option-a-sanitizerlibfuzzer-preloads)._
+libFuzzer options can be passed to the Ruby script like so:
+
+```bash
+LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy.ext_path')/asan_with_fuzzer.so \
+    ruby fuzz_msgpack.rb /path/to/corpus
+```
+
+See [libFuzzer options](https://llvm.org/docs/LibFuzzer.html#options) for more information.
 
 # Developing
 
-Development is done primarily within the Docker container.
+Development can be done locally, or using the `Dockerfile` provided in this repository.
 
-First, shell into the container using the `docker run ... --entrypoint` command above.
+You can build the Ruzzy Docker image with the following command:
+
+```bash
+docker build --tag ruzzy .
+```
+
+_You may want to grab a cup of coffee, the initial build can take a while._
+
+By default, this will build a Docker image for AArch64 architectures (e.g. M-series MacBooks). If you need to run Ruzzy on other architectures, like x86, you can use the following [build arguments](https://docs.docker.com/build/guide/build-args/):
+
+```
+docker build \
+    --build-arg CLANG_ARCH=x86_64 \
+    --build-arg CLANG_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz \
+    --build-arg CLANG_CHECKSUM=884ee67d647d77e58740c1e645649e29ae9e8a6fe87c1376be0f3a30f3cc9ab3 \
+    --tag ruzzy \
+    .
+```
+
+Then, you can shell into the container using the following command:
+
+```
+docker run -it -v $(pwd):/app/ruzzy --entrypoint /bin/bash ruzzy
+```
 
 ## Testing
 

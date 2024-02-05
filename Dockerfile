@@ -47,11 +47,7 @@ ENV MAKE="make --environment-overrides V=1"
 # 3. Ruby recommends disabling sigaltstack: https://github.com/ruby/ruby/blob/master/doc/contributing/building_ruby.md#building-with-address-sanitizer
 ENV ASAN_OPTIONS="allocator_may_return_null=1:detect_leaks=0:use_sigaltstack=0"
 
-# Split dependency and application code installation for improved caching
-COPY ruzzy.gemspec Gemfile ruzzy/
 WORKDIR ruzzy/
-RUN bundler3.1 install
-
 COPY . .
 RUN gem build
 RUN RUZZY_DEBUG=1 gem install --verbose ruzzy-*.gem

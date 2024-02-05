@@ -12,6 +12,10 @@ module Ruzzy
     c_fuzz(test_one_input, args)
   end
 
+  def dummy
+    fuzz(->(data) { Ruzzy.dummy_test_one_input(data) } )
+  end
+
   def ext_path
     (Pathname.new(__FILE__).parent.parent + 'ext' + 'cruzzy').to_s
   end
@@ -26,6 +30,7 @@ module Ruzzy
   end
 
   module_function :fuzz
+  module_function :dummy
   module_function :ext_path
   module_function :dummy_test_one_input
 end
