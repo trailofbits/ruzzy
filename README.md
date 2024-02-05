@@ -56,7 +56,7 @@ export ASAN_OPTIONS="allocator_may_return_null=1:detect_leaks=0:use_sigaltstack=
 You can then run the example with the following command:
 
 ```bash
-LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy.ext_path')/asan_with_fuzzer.so \
+LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
     ruby -e 'require "ruzzy"; Ruzzy.dummy'
 ```
 
@@ -82,7 +82,7 @@ Base64: SEko
 You can re-run the crash case with the following command:
 
 ```bash
-LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy.ext_path')/asan_with_fuzzer.so \
+LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
     ruby -e 'require "ruzzy"; Ruzzy.dummy' \
     ./crash-7099f1508d4048cfe74226869805efa3db24b165
 ```
@@ -131,14 +131,14 @@ Let's call this file `fuzz_msgpack.rb`.
 You can run this file and start fuzzing with the following command:
 
 ```bash
-LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy.ext_path')/asan_with_fuzzer.so \
+LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
     ruby fuzz_msgpack.rb
 ```
 
 libFuzzer options can be passed to the Ruby script like so:
 
 ```bash
-LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy.ext_path')/asan_with_fuzzer.so \
+LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
     ruby fuzz_msgpack.rb /path/to/corpus
 ```
 

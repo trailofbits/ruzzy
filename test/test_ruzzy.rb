@@ -64,6 +64,10 @@ class RuzzyTest < Test::Unit::TestCase
   end
 
   def test_ext_path
-    assert(Ruzzy.ext_path)
+    assert(Ruzzy::EXT_PATH)
+  end
+
+  def test_asan_path
+    assert(Ruzzy::ASAN_PATH)
   end
 end

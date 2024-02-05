@@ -1,4 +1,4 @@
 #!/bin/bash
 
-LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy.ext_path')/asan_with_fuzzer.so \
+LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
     ruby bin/dummy.rb "$@"

@@ -50,7 +50,7 @@ ENV ASAN_OPTIONS="allocator_may_return_null=1:detect_leaks=0:use_sigaltstack=0"
 WORKDIR ruzzy/
 COPY . .
 RUN gem build
-RUN RUZZY_DEBUG=1 gem install --verbose ruzzy-*.gem
+RUN RUZZY_DEBUG=1 gem install --development --verbose ruzzy-*.gem
 
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["-help=1"]

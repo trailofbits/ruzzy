@@ -7,6 +7,8 @@ module Ruzzy
   require 'cruzzy/cruzzy'
 
   DEFAULT_ARGS = [$PROGRAM_NAME] + ARGV
+  EXT_PATH = Pathname.new(__FILE__).parent.parent + 'ext' + 'cruzzy'
+  ASAN_PATH = (EXT_PATH + 'asan_with_fuzzer.so').to_s
 
   def fuzz(test_one_input, args = DEFAULT_ARGS)
     c_fuzz(test_one_input, args)
@@ -14,10 +16,6 @@ module Ruzzy
 
   def dummy
     fuzz(->(data) { Ruzzy.dummy_test_one_input(data) } )
-  end
-
-  def ext_path
-    (Pathname.new(__FILE__).parent.parent + 'ext' + 'cruzzy').to_s
   end
 
   def dummy_test_one_input(data)
@@ -31,6 +29,5 @@ module Ruzzy
 
   module_function :fuzz
   module_function :dummy
-  module_function :ext_path
   module_function :dummy_test_one_input
 end
