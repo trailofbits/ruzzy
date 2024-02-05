@@ -20,7 +20,7 @@ module Ruzzy
 
   def dummy_test_one_input(data)
     # This 'require' depends on LD_PRELOAD, so it's placed inside the function
-    # scope. This allows us to run ext_path for LD_PRELOAD and not have a
+    # scope. This allows us to access EXT_PATH for LD_PRELOAD and not have a
     # circular dependency.
     require 'dummy/dummy'
 
