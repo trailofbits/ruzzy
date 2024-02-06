@@ -78,7 +78,7 @@ static int proc_caller(const uint8_t *data, size_t size)
         );
     }
 
-    return NUM2INT(result);
+    return FIX2INT(result);
 }
 
 static VALUE c_fuzz(VALUE self, VALUE test_one_input, VALUE args)
@@ -120,7 +120,7 @@ static VALUE c_fuzz(VALUE self, VALUE test_one_input, VALUE args)
     // https://llvm.org/docs/LibFuzzer.html#using-libfuzzer-as-a-library
     int result = LLVMFuzzerRunDriver(&args_len, &args_ptr, proc_caller);
 
-    return INT2NUM(result);
+    return INT2FIX(result);
 }
 
 void Init_cruzzy()
