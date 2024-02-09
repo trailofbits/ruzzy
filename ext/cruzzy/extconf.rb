@@ -6,7 +6,7 @@ require 'tempfile'
 require 'rbconfig'
 require 'logger'
 
-LOGGER = Logger.new(STDERR)
+LOGGER = Logger.new($stderr)
 LOGGER.level = ENV.key?('RUZZY_DEBUG') ? Logger::DEBUG : Logger::INFO
 
 # These ENV variables really shouldn't be used because we don't support
