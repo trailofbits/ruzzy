@@ -33,18 +33,19 @@ module Ruzzy
   module_function :dummy_test_one_input
 end
 
+# Hook Integer operations for tracing in SantizerCoverage
 class Integer
-  alias :ruzzy_eeql :==
-  alias :ruzzy_eeeql :===
-  alias :ruzzy_eql? :eql?
-  alias :ruzzy_spc :<=>
-  alias :ruzzy_lt :<
-  alias :ruzzy_le :<=
-  alias :ruzzy_gt :>
-  alias :ruzzy_ge :>=
-  alias :ruzzy_divo :/
-  alias :ruzzy_div :div
-  alias :ruzzy_divmod :divmod
+  alias ruzzy_eeql ==
+  alias ruzzy_eeeql ===
+  alias ruzzy_eql? eql?
+  alias ruzzy_spc <=>
+  alias ruzzy_lt <
+  alias ruzzy_le <=
+  alias ruzzy_gt >
+  alias ruzzy_ge >=
+  alias ruzzy_divo /
+  alias ruzzy_div div
+  alias ruzzy_divmod divmod
 
   def ==(other)
     Ruzzy.c_trace_cmp8(self, other)
