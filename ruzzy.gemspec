@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.homepage              = 'https://rubygems.org/gems/ruzzy'
   s.license               = 'AGPL-3.0-only'
   s.extensions            = %w[ext/cruzzy/extconf.rb ext/dummy/extconf.rb]
-  s.required_ruby_version = '>= 3.1.0'
+  s.required_ruby_version = '>= 3.0.0'
 
   s.add_development_dependency 'rake', '~> 13.0'
   s.add_development_dependency 'rake-compiler', '~> 1.2'
