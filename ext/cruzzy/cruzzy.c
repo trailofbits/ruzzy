@@ -175,16 +175,15 @@ static void event_hook_branch(VALUE counter_hash, rb_trace_arg_t *tracearg) {
     ID path_sym = rb_intern_str(path);
     VALUE lineno = rb_tracearg_lineno(tracearg);
     VALUE tuple = rb_ary_new_from_args(2, INT2NUM(path_sym), lineno);
+    VALUE existing_counter = rb_hash_lookup(counter_hash, tuple);
 
     int counter_index;
 
-    if (rb_hash_lookup(counter_hash, tuple) != Qnil) {
-        VALUE value = rb_hash_aref(counter_hash, tuple);
-        counter_index = FIX2INT(value);
-    } else {
+    if (existing_counter == Qnil) {
         rb_hash_aset(counter_hash, tuple, INT2FIX(COUNTER));
-        counter_index = COUNTER;
-        COUNTER++;
+        counter_index = COUNTER++;
+    } else {
+        counter_index = FIX2INT(existing_counter);
     }
 
     COUNTERS[counter_index % MAX_COUNTERS]++;
