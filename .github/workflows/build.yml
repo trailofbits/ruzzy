@@ -24,7 +24,6 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
-      - run: sudo apt update && sudo apt install -y ruby-dev
       - run: gem build
       - run: gem install --verbose ruzzy-*.gem
         env:
