@@ -87,6 +87,11 @@ LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
     ./crash-7099f1508d4048cfe74226869805efa3db24b165
 ```
 
+The following sanitizers are available:
+
+- `Ruzzy::ASAN_PATH` for [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html)
+- `Ruzzy::UBSAN_PATH` for [UndefinedBehaviorSanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html)
+
 ## Fuzzing third-party libraries
 
 Let's fuzz the [`msgpack-ruby`](https://github.com/msgpack/msgpack-ruby) library as an example. First, install the gem:

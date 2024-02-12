@@ -36,27 +36,26 @@ def get_clang_file_name(file_name)
   success && exists ? stdout.strip : false
 end
 
-def merge_asan_libfuzzer_lib(asan_lib, fuzzer_no_main_lib)
-  merged_output = 'asan_with_fuzzer.so'
-
+def merge_sanitizer_libfuzzer_lib(sanitizer_lib, fuzzer_no_main_lib, merged_output, *preinits)
   # https://github.com/google/atheris/blob/master/native_extension_fuzzing.md#why-this-is-necessary
   Tempfile.create do |file|
-    file.write(File.open(asan_lib).read)
+    LOGGER.debug("Creating #{sanitizer_lib} sanitizer archive at #{file.path}")
 
-    LOGGER.debug("Creating ASAN archive at #{file.path}")
+    file.write(File.open(sanitizer_lib).read)
+
     _, status = Open3.capture2(
       AR,
       'd',
       file.path,
-      'asan_preinit.cc.o',
-      'asan_preinit.cpp.o'
+      *preinits
     )
     unless status.success?
       LOGGER.error("The #{AR} archive command failed.")
       exit(1)
     end
 
-    LOGGER.debug("Merging ASAN at #{file.path} and libFuzzer at #{fuzzer_no_main_lib} to #{merged_output}")
+    LOGGER.debug("Merging sanitizer at #{file.path} with libFuzzer at #{fuzzer_no_main_lib} to #{merged_output}")
+
     _, status = Open3.capture2(
       CXX,
       '-Wl,--whole-archive',
@@ -105,7 +104,33 @@ unless asan_lib
   exit(1)
 end
 
-merge_asan_libfuzzer_lib(asan_lib, fuzzer_no_main_lib)
+merge_sanitizer_libfuzzer_lib(
+  asan_lib,
+  fuzzer_no_main_lib,
+  'asan_with_fuzzer.so',
+  'asan_preinit.cc.o',
+  'asan_preinit.cpp.o'
+)
+
+ubsan_libs = [
+  'libclang_rt.ubsan_standalone.a',
+  'libclang_rt.ubsan_standalone-aarch64.a',
+  'libclang_rt.ubsan_standalone-x86_64.a'
+]
+ubsan_lib = ubsan_libs.map { |lib| get_clang_file_name(lib) }.find(&:itself)
+
+unless ubsan_lib
+  LOGGER.error("Could not find ubsan using #{CC}.")
+  exit(1)
+end
+
+merge_sanitizer_libfuzzer_lib(
+  ubsan_lib,
+  fuzzer_no_main_lib,
+  'ubsan_with_fuzzer.so',
+  'ubsan_init_standalone_preinit.cc.o',
+  'ubsan_init_standalone_preinit.cpp.o'
+)
 
 # The LOCAL_LIBS variable allows linking arbitrary libraries into Ruby C
 # extensions. It is supported by the Ruby mkmf library and C extension Makefile.

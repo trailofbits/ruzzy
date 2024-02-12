@@ -70,4 +70,8 @@ class RuzzyTest < Test::Unit::TestCase
   def test_asan_path
     assert(Ruzzy::ASAN_PATH)
   end
+
+  def test_ubsan_path
+    assert(Ruzzy::UBSAN_PATH)
+  end
 end
