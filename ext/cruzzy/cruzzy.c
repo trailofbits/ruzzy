@@ -36,18 +36,21 @@ static VALUE c_libfuzzer_is_loaded(VALUE self)
 
 int ATEXIT_RETCODE = 0;
 
-static void ruzzy_exit() {
+__attribute__((__noreturn__)) static void ruzzy_exit()
+{
      _exit(ATEXIT_RETCODE);
 }
 
-static void graceful_exit(int code) {
+__attribute__((__noreturn__)) static void graceful_exit(int code)
+{
     // Disable libFuzzer's atexit
     ATEXIT_RETCODE = code;
     atexit(ruzzy_exit);
     exit(code);
 }
 
-static void sigint_handler(int signal) {
+__attribute__((__noreturn__)) static void sigint_handler(int signal)
+{
     fprintf(
         stderr,
         "Signal %d (%s) received. Exiting...\n",
