@@ -9,14 +9,17 @@
 #include <ruby.h>
 #include <ruby/debug.h>
 
-// Internal only: https://github.com/ruby/ruby/blob/v3_3_0/vm_core.h#L2182-L2184
+// This constant is defined in the Ruby C implementation, but it's internal
+// only. Fortunately the event hooking still respects this constant being
+// passed from an external source. For more information see:
+// https://github.com/ruby/ruby/blob/v3_3_0/vm_core.h#L2182-L2184
 #define RUBY_EVENT_COVERAGE_BRANCH 0x020000
 
 // 128 arguments should be enough for anybody
 #define MAX_ARGS_SIZE 128
 
-// TODO: what's a good number here? Should we mmap like Atheris?
-#define MAX_COUNTERS 256
+// TODO: should we mmap like Atheris?
+#define MAX_COUNTERS 8192
 
 extern int LLVMFuzzerRunDriver(
     int *argc,
