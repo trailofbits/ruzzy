@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2024-02-13
+
 ### Added
 
 - Support for fuzzing pure Ruby code ([#7](https://github.com/trailofbits/ruzzy/issues/7))

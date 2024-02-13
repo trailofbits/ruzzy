@@ -1,12 +1,28 @@
 # Ruzzy
 
-A Ruby C extension fuzzer.
+[![Test](https://github.com/trailofbits/ruzzy/actions/workflows/test.yml/badge.svg)](https://github.com/trailofbits/ruzzy/actions/workflows/test.yml)
+[![Gem Version](https://img.shields.io/gem/v/ruzzy)](https://rubygems.org/gems/ruzzy)
 
-Ruzzy is based on Google's [Atheris](https://github.com/google/atheris), a Python fuzzer. Unlike Atheris, Ruzzy is focused on fuzzing Ruby C extensions and not Ruby code itself. This may change in the future as the project gains traction.
+A coverage-guided fuzzer for both pure Ruby code and Ruby [C extensions](https://ruby-doc.org/3.3.0/extension_rdoc.html).
+
+Ruzzy is heavily inspired by Google's [Atheris](https://github.com/google/atheris), a Python fuzzer. Like Atheris, Ruzzy uses [libFuzzer](https://llvm.org/docs/LibFuzzer.html) for its coverage instrumentation and fuzzing engine. Ruzzy also supports [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html) and [UndefinedBehaviorSanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html) when fuzzing C extensions.
+
+Table of contents:
+
+- [Installing](#installing)
+- [Using](#using)
+  - [Getting started](#getting-started)
+  - [Fuzzing pure Ruby code](#fuzzing-pure-ruby-code)
+  - [Fuzzing Ruby C extensions](#fuzzing-ruby-c-extensions)
+- [Developing](#developing)
+  - [Testing](#testing)
+  - [Linting](#linting)
+  - [Releasing](#releasing)
+- [Further reading](#further-reading)
 
 # Installing
 
-Ruzzy requires a recent version of `clang`, preferably the [latest release](https://github.com/llvm/llvm-project/releases).
+Currently, Ruzzy only supports Linux x86-64 and AArch64/ARM64. If you'd like to run Ruzzy on a Mac, you can build the [`Dockerfile`](https://github.com/trailofbits/ruzzy/blob/main/Dockerfile) and/or use the [development environment](#developing). Ruzzy requires a recent version of `clang`, preferably the [latest release](https://github.com/llvm/llvm-project/releases).
 
 Install Ruzzy with the following command:
 
@@ -34,9 +50,7 @@ RUZZY_DEBUG=1 gem install --verbose ruzzy
 
 ## Getting started
 
-Ruzzy includes a [toy example](https://llvm.org/docs/LibFuzzer.html#toy-example) to demonstrate how it works.
-
-First, we need to set the following environment variable:
+Ruzzy includes a [toy example](https://llvm.org/docs/LibFuzzer.html#toy-example) to demonstrate how it works. First, set the following environment variable:
 
 ```bash
 export ASAN_OPTIONS="allocator_may_return_null=1:detect_leaks=0:use_sigaltstack=0"
@@ -92,7 +106,80 @@ The following sanitizers are available:
 - `Ruzzy::ASAN_PATH` for [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html)
 - `Ruzzy::UBSAN_PATH` for [UndefinedBehaviorSanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html)
 
-## Fuzzing third-party libraries
+## Fuzzing pure Ruby code
+
+Let's fuzz a small Ruby script as an example. Fuzzing pure Ruby code requires two Ruby scripts: a tracer script and a fuzzing harness. The tracer script is required due to an implementation detail of the Ruby interpreter. Understanding the details of this interaction, other than the fact that it's necessary, is not required.
+
+First, the tracer script, let's call it `test_tracer.rb`:
+
+```ruby
+# frozen_string_literal: true
+
+require 'ruzzy'
+
+Ruzzy.c_trace_branch
+
+require_relative 'test_harness.rb'
+```
+
+Next, the fuzzing harness, let's call it `test_harness.rb`:
+
+```ruby
+# frozen_string_literal: true
+
+require 'ruzzy'
+
+test_one_input = lambda do |data|
+  if data.length == 4
+    if data[0] == 'F'
+      if data[1] == 'U'
+        if data[2] == 'Z'
+          if data[3] == 'Z'
+            raise
+          end
+        end
+      end
+    end
+  end
+  return 0
+end
+
+Ruzzy.fuzz(test_one_input)
+```
+
+You can run this file and start fuzzing with the following command:
+
+```bash
+LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
+    ruby test_tracer.rb
+```
+
+It should quickly produce a crash like the following:
+
+```
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 2311041000
+...
+/app/ruzzy/bin/test_harness.rb:12:in `block in <top (required)>': unhandled exception
+	from /var/lib/gems/3.1.0/gems/ruzzy-0.6.0/lib/ruzzy.rb:15:in `c_fuzz'
+	from /var/lib/gems/3.1.0/gems/ruzzy-0.6.0/lib/ruzzy.rb:15:in `fuzz'
+	from /app/ruzzy/bin/test_harness.rb:35:in `<top (required)>'
+	from bin/test_tracer.rb:7:in `require_relative'
+	from bin/test_tracer.rb:7:in `<main>'
+...
+SUMMARY: libFuzzer: fuzz target exited
+MS: 1 CopyPart-; base unit: 24b4b428cf94c21616893d6f94b30398a49d27cc
+0x46,0x55,0x5a,0x5a,
+FUZZ
+artifact_prefix='./'; Test unit written to ./crash-aea2e3923af219a8956f626558ef32f30a914ebc
+Base64: RlVaWg==
+```
+
+We can see that it correctly found the input (`"FUZZ"`) that produced an exception.
+
+To fuzz your own target, modify the `test_one_input` `lambda` to call your target function.
+
+## Fuzzing Ruby C extensions
 
 Let's fuzz the [`msgpack-ruby`](https://github.com/msgpack/msgpack-ruby) library as an example. First, install the gem:
 
@@ -109,9 +196,7 @@ CXXFLAGS="-fsanitize=address,fuzzer-no-link -fno-omit-frame-pointer -fno-common 
 
 In addition to the environment variables used when compiling Ruzzy, we're specifying `CFLAGS` and `CXXFLAGS`. These flags aid in the fuzzing process. They enable helpful functionality like an address sanitizer, and improved stack trace information. For more information see [AddressSanitizerFlags](https://github.com/google/sanitizers/wiki/AddressSanitizerFlags).
 
-Next, we need a fuzzing harness for `msgpack`.
-
-The following is a basic example that should be familiar to those with [libFuzzer experience](https://llvm.org/docs/LibFuzzer.html#fuzz-target):
+Next, we need a fuzzing harness for `msgpack`. The following may be familiar to those with [libFuzzer experience](https://llvm.org/docs/LibFuzzer.html#fuzz-target):
 
 ```ruby
 # frozen_string_literal: true
@@ -131,9 +216,7 @@ end
 Ruzzy.fuzz(test_one_input)
 ```
 
-Let's call this file `fuzz_msgpack.rb`.
-
-You can run this file and start fuzzing with the following command:
+Let's call this file `fuzz_msgpack.rb`. You can run this file and start fuzzing with the following command:
 
 ```bash
 LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
@@ -148,6 +231,8 @@ LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
 ```
 
 See [libFuzzer options](https://llvm.org/docs/LibFuzzer.html#options) for more information.
+
+To fuzz your own target, modify the `test_one_input` `lambda` to call your target function.
 
 # Developing
 
@@ -198,16 +283,31 @@ You can run `rubocop` within the container with the following command:
 rubocop
 ```
 
-# Recommended reading
+## Releasing
+
+Ruzzy is automatically [released](https://github.com/trailofbits/ruzzy/actions/workflows/release.yml) to [RubyGems](https://rubygems.org/gems/ruzzy) when a new git tag is pushed.
+
+To release a new version run the following commands:
+
+```bash
+git tag vX.X.X
+```
+
+```bash
+git push --tags
+```
+
+# Further reading
 
 - Ruby C extensions
   - https://guides.rubygems.org/gems-with-extensions/
   - https://www.rubyguides.com/2018/03/write-ruby-c-extension/
   - https://rubyreferences.github.io/rubyref/advanced/extensions.html
   - https://silverhammermba.github.io/emberb/c/
+  - https://ruby-doc.org/3.3.0/extension_rdoc.html
   - https://ruby-doc.org/3.3.0/stdlibs/mkmf/MakeMakefile.html
   - https://github.com/flavorjones/ruby-c-extensions-explained
-  - https://github.com/ruby/ruby/blob/v3_1_2/lib/mkmf.rb
+  - https://github.com/ruby/ruby/blob/v3_3_0/lib/mkmf.rb
 - Ruby fuzzing
   - https://github.com/twistlock/kisaten
   - https://github.com/richo/afl-ruby
@@ -218,3 +318,5 @@ rubocop
   - https://security.googleblog.com/2020/12/how-atheris-python-fuzzer-works.html
   - https://github.com/google/atheris/blob/2.3.0/setup.py
   - https://github.com/google/atheris/blob/2.3.0/src/native/core.cc
+  - https://github.com/google/atheris/blob/2.3.0/src/native/tracer.cc
+  - https://github.com/google/atheris/blob/2.3.0/src/native/counters.cc

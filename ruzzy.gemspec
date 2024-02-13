@@ -3,7 +3,7 @@
 Gem::Specification.new do |s|
   s.name                  = 'ruzzy'
   s.version               = '0.6.0'
-  s.summary               = 'A Ruby C extension fuzzer'
+  s.summary               = 'A coverage-guided fuzzer for both pure Ruby code and Ruby C extensions'
   s.authors               = ['Trail of Bits']
   s.email                 = 'support@trailofbits.com'
   s.files                 = Dir['lib/**/*.rb'] + Dir['ext/**/*.{rb,c,h}']
