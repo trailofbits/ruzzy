@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name                  = 'ruzzy'
-  s.version               = '0.5.0'
+  s.version               = '0.6.0'
   s.summary               = 'A Ruby C extension fuzzer'
   s.authors               = ['Trail of Bits']
   s.email                 = 'support@trailofbits.com'
@@ -14,5 +14,6 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'rake', '~> 13.0'
   s.add_development_dependency 'rake-compiler', '~> 1.2'
+  s.add_development_dependency 'rake-release', '~> 1.3'
   s.add_development_dependency 'rubocop', '~> 1.60'
 end
