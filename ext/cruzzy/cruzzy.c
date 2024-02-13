@@ -182,7 +182,7 @@ static void event_hook_branch(VALUE counter_hash, rb_trace_arg_t *tracearg) {
 
     int counter_index;
 
-    if (existing_counter == Qnil) {
+    if (NIL_P(existing_counter)) {
         rb_hash_aset(counter_hash, tuple, INT2FIX(COUNTER));
         counter_index = COUNTER++;
     } else {
