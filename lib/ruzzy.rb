@@ -15,10 +15,6 @@ module Ruzzy
     c_fuzz(test_one_input, args)
   end
 
-  def dummy
-    fuzz(->(data) { Ruzzy.dummy_test_one_input(data) })
-  end
-
   def dummy_test_one_input(data)
     # This 'require' depends on LD_PRELOAD, so it's placed inside the function
     # scope. This allows us to access EXT_PATH for LD_PRELOAD and not have a
@@ -28,9 +24,13 @@ module Ruzzy
     c_dummy_test_one_input(data)
   end
 
+  def dummy
+    fuzz(->(data) { dummy_test_one_input(data) })
+  end
+
   module_function :fuzz
-  module_function :dummy
   module_function :dummy_test_one_input
+  module_function :dummy
 end
 
 # Hook Integer operations for tracing in SantizerCoverage
