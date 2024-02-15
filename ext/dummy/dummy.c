@@ -8,15 +8,17 @@ static int _c_dummy_test_one_input(const uint8_t *data, size_t size)
 {
     char test[] = {'a', 'b', 'c'};
 
-    if (size > 0 && data[0] == 'H') {
-        if (size > 1 && data[1] == 'I') {
-            // This code exists specifically to test the driver and ensure
-            // libFuzzer is functioning as expected, so we can safely ignore
-            // the warning.
-            #pragma clang diagnostic push
-            #pragma clang diagnostic ignored "-Warray-bounds"
-            test[1024] = 'd';
-            #pragma clang diagnostic pop
+    if (size == 2) {
+        if (data[0] == 'H') {
+            if (data[1] == 'I') {
+                // This code exists specifically to test the driver and ensure
+                // libFuzzer is functioning as expected, so we can safely ignore
+                // the warning.
+                #pragma clang diagnostic push
+                #pragma clang diagnostic ignored "-Warray-bounds"
+                test[1024] = 'd';
+                #pragma clang diagnostic pop
+            }
         }
     }
 
