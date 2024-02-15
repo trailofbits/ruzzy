@@ -28,9 +28,24 @@ module Ruzzy
     fuzz(->(data) { dummy_test_one_input(data) })
   end
 
+  def trace(harness_script)
+    harness_path = Pathname.new(harness_script)
+
+    # Mimic require_relative. If harness script is provided as an absolute path,
+    # then use that. If not, then assume the script is in the same directory as
+    # as the tracer script, i.e. the caller.
+    if !harness_path.absolute?
+      caller_path = Pathname.new(caller_locations.first.path)
+      harness_path = (caller_path.parent / harness_path).realpath
+    end
+
+    c_trace(harness_path.to_s)
+  end
+
   module_function :fuzz
   module_function :dummy_test_one_input
   module_function :dummy
+  module_function :trace
 end
 
 # Hook Integer operations for tracing in SantizerCoverage

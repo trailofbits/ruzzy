@@ -117,9 +117,7 @@ First, the tracer script, let's call it `test_tracer.rb`:
 
 require 'ruzzy'
 
-Ruzzy.c_trace_branch
-
-require_relative 'test_harness.rb'
+Ruzzy.trace('test_harness.rb')
 ```
 
 Next, the fuzzing harness, let's call it `test_harness.rb`:

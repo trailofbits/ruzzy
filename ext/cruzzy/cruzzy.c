@@ -210,7 +210,7 @@ static void enable_branch_coverage_hooks()
     rb_funcall(coverage_mod, rb_intern("setup"), 1, hash_arg);
 }
 
-static VALUE c_trace_branch(VALUE self)
+static VALUE c_trace(VALUE self, VALUE harness_path)
 {
     VALUE counter_hash = rb_hash_new();
 
@@ -230,7 +230,7 @@ static VALUE c_trace_branch(VALUE self)
 
     enable_branch_coverage_hooks();
 
-    return Qnil;
+    return rb_require(StringValueCStr(harness_path));
 }
 
 void Init_cruzzy()
@@ -245,5 +245,5 @@ void Init_cruzzy()
     rb_define_module_function(ruzzy, "c_libfuzzer_is_loaded", &c_libfuzzer_is_loaded, 0);
     rb_define_module_function(ruzzy, "c_trace_cmp8", &c_trace_cmp8, 2);
     rb_define_module_function(ruzzy, "c_trace_div8", &c_trace_div8, 1);
-    rb_define_module_function(ruzzy, "c_trace_branch", &c_trace_branch, 0);
+    rb_define_module_function(ruzzy, "c_trace", &c_trace, 1);
 }
