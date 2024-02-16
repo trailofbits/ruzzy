@@ -2,7 +2,7 @@
 
 require 'pathname'
 
-# A Ruby C extension fuzzer
+# A coverage-guided fuzzer for both pure Ruby code and Ruby C extensions
 module Ruzzy
   require 'cruzzy/cruzzy'
 

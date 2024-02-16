@@ -86,20 +86,22 @@ INFO: Seed: 2527961537
 ...
 SUMMARY: AddressSanitizer: stack-use-after-return /var/lib/gems/3.1.0/gems/ruzzy-0.5.0/ext/dummy/dummy.c:18:24 in _c_dummy_test_one_input
 ...
-==3==ABORTING
-MS: 1 InsertByte-; base unit: 253420c1158bc6382093d409ce2e9cff5806e980
-0x48,0x49,0x28,
-HI(
-artifact_prefix='./'; Test unit written to ./crash-7099f1508d4048cfe74226869805efa3db24b165
-Base64: SEko
+==1541==ABORTING
+MS: 2 ChangeByte-CrossOver-; base unit: b408860bc2c0584b8e0bb6fa3443005a3ef39854
+0x48,0x49,
+HI
+artifact_prefix='./'; Test unit written to ./crash-253420c1158bc6382093d409ce2e9cff5806e980
+Base64: SEk=
 ```
+
+We can see that it correctly found the input (`"HI"`) that produced a memory violation. For more information, see [`dummy.c`](https://github.com/trailofbits/ruzzy/blob/main/ext/dummy/dummy.c) to see why this violation occurred.
 
 You can re-run the crash case with the following command:
 
 ```bash
 LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
     ruby -e 'require "ruzzy"; Ruzzy.dummy' \
-    ./crash-7099f1508d4048cfe74226869805efa3db24b165
+    ./crash-253420c1158bc6382093d409ce2e9cff5806e980
 ```
 
 The following sanitizers are available:
