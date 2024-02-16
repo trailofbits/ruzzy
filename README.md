@@ -15,6 +15,7 @@ Table of contents:
   - [Fuzzing pure Ruby code](#fuzzing-pure-ruby-code)
   - [Fuzzing Ruby C extensions](#fuzzing-ruby-c-extensions)
 - [Developing](#developing)
+  - [Compiling](#compiling)
   - [Testing](#testing)
   - [Linting](#linting)
   - [Releasing](#releasing)
@@ -261,6 +262,16 @@ Then, you can shell into the container using the following command:
 docker run -it -v $(pwd):/app/ruzzy --entrypoint /bin/bash ruzzy
 ```
 
+## Compiling
+
+We use [`rake-compiler`](https://github.com/rake-compiler/rake-compiler) to compile Ruzzy's C extensions.
+
+You can compile the C extensions within the container with the following command:
+
+```bash
+rake compile
+```
+
 ## Testing
 
 We use `rake` unit tests to test Ruby code.
@@ -268,7 +279,8 @@ We use `rake` unit tests to test Ruby code.
 You can run the tests within the container with the following command:
 
 ```bash
-rake test
+LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
+    rake test
 ```
 
 ## Linting
