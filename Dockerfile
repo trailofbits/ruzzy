@@ -1,38 +1,16 @@
 FROM debian:12-slim
 
 RUN apt update && apt install -y \
-    binutils \
-    gcc \
-    g++ \
-    libc-dev \
-    make \
+    build-essential \
+    clang \
     ruby \
     ruby-dev \
-    wget \
-    xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 ENV APP_DIR="/app"
-ENV CLANG_DIR="$APP_DIR/clang"
 RUN mkdir $APP_DIR
-RUN mkdir $CLANG_DIR
 WORKDIR $APP_DIR
 
-ARG CLANG_ARCH=aarch64
-ARG CLANG_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-aarch64-linux-gnu.tar.xz
-ARG CLANG_CHECKSUM=6dd62762285326f223f40b8e4f2864b5c372de3f7de0731cb7cd55ca5287b75a
-
-ENV CLANG_ARCH=${CLANG_ARCH}
-ENV CLANG_URL=${CLANG_URL}
-ENV CLANG_CHECKSUM=${CLANG_CHECKSUM}
-
-ENV CLANG_FILE clang.tar.xz
-RUN wget -q -O $CLANG_FILE $CLANG_URL && \
-    echo "$CLANG_CHECKSUM  $CLANG_FILE" | sha256sum -c - && \
-    tar xf $CLANG_FILE -C $CLANG_DIR --strip-components 1 && \
-    rm $CLANG_FILE
-
-ENV PATH="$PATH:$CLANG_DIR/bin"
 ENV CC="clang"
 ENV CXX="clang++"
 ENV LDSHARED="clang -shared"

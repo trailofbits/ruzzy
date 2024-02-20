@@ -64,6 +64,7 @@ def merge_sanitizer_libfuzzer_lib(sanitizer_lib, fuzzer_no_main_lib, merged_outp
       '-Wl,--no-whole-archive',
       '-lpthread',
       '-ldl',
+      '-lstdc++',
       '-shared',
       '-o',
       merged_output
@@ -136,5 +137,7 @@ merge_sanitizer_libfuzzer_lib(
 # extensions. It is supported by the Ruby mkmf library and C extension Makefile.
 # For more information, see https://github.com/ruby/ruby/blob/master/lib/mkmf.rb.
 $LOCAL_LIBS = fuzzer_no_main_lib
+
+$LIBS << ' -lstdc++'
 
 create_makefile('cruzzy/cruzzy')
