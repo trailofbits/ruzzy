@@ -82,12 +82,13 @@ It should quickly produce a crash like the following:
 ```
 INFO: Running with entropic power schedule (0xFF, 100).
 INFO: Seed: 2527961537
-==3==ERROR: AddressSanitizer: stack-use-after-return on address 0xffffa8000920 at pc 0xffffa96a1a58 bp 0xfffff04ddbb0 sp 0xfffff04ddba8
 ...
-SUMMARY: AddressSanitizer: stack-use-after-return /var/lib/gems/3.1.0/gems/ruzzy-0.5.0/ext/dummy/dummy.c:18:24 in _c_dummy_test_one_input
+==45==ERROR: AddressSanitizer: heap-use-after-free on address 0x50c0009bab80 at pc 0xffff99ea1b44 bp 0xffffce8a67d0 sp 0xffffce8a67c8
 ...
-==1541==ABORTING
-MS: 2 ChangeByte-CrossOver-; base unit: b408860bc2c0584b8e0bb6fa3443005a3ef39854
+SUMMARY: AddressSanitizer: heap-use-after-free /var/lib/gems/3.1.0/gems/ruzzy-0.6.0/ext/dummy/dummy.c:19:24 in _c_dummy_test_one_input
+...
+==45==ABORTING
+MS: 4 EraseBytes-CopyPart-CopyPart-ChangeBit-; base unit: 410e5346bca8ee150ffd507311dd85789f2e171e
 0x48,0x49,
 HI
 artifact_prefix='./'; Test unit written to ./crash-253420c1158bc6382093d409ce2e9cff5806e980
@@ -243,19 +244,6 @@ You can build the Ruzzy Docker image with the following command:
 
 ```bash
 docker build --tag ruzzy .
-```
-
-_You may want to grab a cup of coffee, the initial build can take a while._
-
-By default, this will build a Docker image for AArch64 architectures (e.g. M-series MacBooks). If you need to run Ruzzy on other architectures, like x86, you can use the following [build arguments](https://docs.docker.com/build/guide/build-args/):
-
-```
-docker build \
-    --build-arg CLANG_ARCH=x86_64 \
-    --build-arg CLANG_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz \
-    --build-arg CLANG_CHECKSUM=884ee67d647d77e58740c1e645649e29ae9e8a6fe87c1376be0f3a30f3cc9ab3 \
-    --tag ruzzy \
-    .
 ```
 
 Then, you can shell into the container using the following command:
