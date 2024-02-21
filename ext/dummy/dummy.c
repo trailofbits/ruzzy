@@ -6,7 +6,7 @@
 // https://llvm.org/docs/LibFuzzer.html#toy-example
 static int _c_dummy_test_one_input(const uint8_t *data, size_t size)
 {
-    char boom = 'x';
+    volatile char boom = 'x';
     char test[] = {'a', 'b', 'c'};
 
     if (size == 2) {
@@ -17,6 +17,7 @@ static int _c_dummy_test_one_input(const uint8_t *data, size_t size)
                 ptr[0] = 'x';
                 free(ptr);
                 boom = ptr[0];
+                (void) boom;
             }
         }
     }
