@@ -23,7 +23,7 @@ Table of contents:
 
 # Installing
 
-Currently, Ruzzy only supports Linux x86-64 and AArch64/ARM64. If you'd like to run Ruzzy on a Mac or Windows, you can build the [`Dockerfile`](https://github.com/trailofbits/ruzzy/blob/main/Dockerfile) and/or use the [development environment](#developing). Ruzzy requires a recent version of `clang`, preferably the [latest release](https://github.com/llvm/llvm-project/releases).
+Currently, Ruzzy only supports Linux x86-64 and AArch64/ARM64. If you'd like to run Ruzzy on a Mac or Windows, you can build the [`Dockerfile`](https://github.com/trailofbits/ruzzy/blob/main/Dockerfile) and/or use the [development environment](#developing). Ruzzy requires a recent version of `clang` (tested back to `14.0.6`), preferably the [latest release](https://github.com/llvm/llvm-project/releases).
 
 Install Ruzzy with the following command:
 

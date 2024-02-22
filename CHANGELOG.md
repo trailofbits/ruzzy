@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Automated tests in CI for real fuzzing runs ([#10](https://github.com/trailofbits/ruzzy/issues/10))
+
 ### Changed
 
 - `Ruzzy.c_trace_branch` to `Ruzzy.trace` to simplify interface
+- Support for `clang` back to `14.0.6`, and system `clang`, e.g. from `apt` ([#12](https://github.com/trailofbits/ruzzy/pull/12))
 
 ## [0.6.0] - 2024-02-13
 
