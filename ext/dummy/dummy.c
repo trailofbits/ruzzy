@@ -6,18 +6,17 @@
 // https://llvm.org/docs/LibFuzzer.html#toy-example
 static int _c_dummy_test_one_input(const uint8_t *data, size_t size)
 {
-    char test[] = {'a', 'b', 'c'};
+    volatile char boom = 'x';
 
     if (size == 2) {
         if (data[0] == 'H') {
             if (data[1] == 'I') {
-                // This code exists specifically to test the driver and ensure
-                // libFuzzer is functioning as expected, so we can safely ignore
-                // the warning.
-                #pragma clang diagnostic push
-                #pragma clang diagnostic ignored "-Warray-bounds"
-                test[1024] = 'd';
-                #pragma clang diagnostic pop
+                // Intentional heap-use-after-free for testing purposes
+                char * volatile ptr = malloc(128);
+                ptr[0] = 'x';
+                free(ptr);
+                boom = ptr[0];
+                (void) boom;
             }
         }
     }

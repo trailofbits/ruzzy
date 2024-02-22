@@ -16,7 +16,7 @@ LIBFUZZER_DEFAULT_ERROR_EXITCODE = 77
 # which may cause false positives in the tests. This is obviously not ideal,
 # but I can't think of a better and easier solution right now.
 EXPECTED_OUTPUT_RETURN = 'TypeError: fuzz target function did not return an integer or nil'
-EXPECTED_OUTPUT_SUCCESS = 'ERROR: AddressSanitizer: stack-use-after-return'
+EXPECTED_OUTPUT_SUCCESS = 'ERROR: AddressSanitizer: heap-use-after-free'
 EXPECTED_OUTPUT_BRANCH = 'RuntimeError: TEST HARNESS BRANCH'
 EXPECTED_OUTPUT_CMP = 'RuntimeError: TEST HARNESS CMP'
 EXPECTED_OUTPUT_DIV = 'RuntimeError: TEST HARNESS DIV'

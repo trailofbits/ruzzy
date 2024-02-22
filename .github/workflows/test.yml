@@ -23,10 +23,6 @@ jobs:
           tags: ruzzy
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            CLANG_ARCH=x86_64
-            CLANG_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz
-            CLANG_CHECKSUM=884ee67d647d77e58740c1e645649e29ae9e8a6fe87c1376be0f3a30f3cc9ab3
       - name: Run tests
         run: |
           docker run \
