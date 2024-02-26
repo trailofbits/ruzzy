@@ -1,20 +1,26 @@
-FROM debian:12-slim
+FROM ubuntu:jammy
 
 RUN apt update && apt install -y \
     build-essential \
-    clang \
+    gnupg \
+    lsb-release \
     ruby \
     ruby-dev \
+    software-properties-common \
+    wget \
     && rm -rf /var/lib/apt/lists/*
+
+RUN wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh
+RUN ./llvm.sh 18
 
 ENV APP_DIR="/app"
 RUN mkdir $APP_DIR
 WORKDIR $APP_DIR
 
-ENV CC="clang"
-ENV CXX="clang++"
-ENV LDSHARED="clang -shared"
-ENV LDSHAREDXX="clang++ -shared"
+ENV CC="clang-18"
+ENV CXX="clang++-18"
+ENV LDSHARED="clang-18 -shared"
+ENV LDSHAREDXX="clang++-18 -shared"
 
 # The MAKE variable allows overwriting the make command at runtime. This forces the
 # Ruby C extension to respect ENV variables when compiling, like CC, CFLAGS, etc.
