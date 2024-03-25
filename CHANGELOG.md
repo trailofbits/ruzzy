@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Ruzzy.c_trace_branch` to `Ruzzy.trace` to simplify interface
 - Support for `clang` back to `14.0.6`, and system `clang`, e.g. from `apt` ([#12](https://github.com/trailofbits/ruzzy/pull/12))
 
+### Fixed
+
+- Support for Ruby back to `3.0.0` (Ubuntu 22.04) ([#14](https://github.com/trailofbits/ruzzy/issues/14))
+
 ## [0.6.0] - 2024-02-13
 
 ### Added
