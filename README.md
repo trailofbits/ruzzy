@@ -14,6 +14,7 @@ Table of contents:
   - [Getting started](#getting-started)
   - [Fuzzing pure Ruby code](#fuzzing-pure-ruby-code)
   - [Fuzzing Ruby C extensions](#fuzzing-ruby-c-extensions)
+- [Trophy case](#trophy-case)
 - [Developing](#developing)
   - [Compiling](#compiling)
   - [Testing](#testing)
@@ -131,18 +132,22 @@ Next, the fuzzing harness, let's call it `test_harness.rb`:
 
 require 'ruzzy'
 
-test_one_input = lambda do |data|
-  if data.length == 4
-    if data[0] == 'F'
-      if data[1] == 'U'
-        if data[2] == 'Z'
-          if data[3] == 'Z'
+def fuzzing_target(input)
+  if input.length == 4
+    if input[0] == 'F'
+      if input[1] == 'U'
+        if input[2] == 'Z'
+          if input[3] == 'Z'
             raise
           end
         end
       end
     end
   end
+end
+
+test_one_input = lambda do |data|
+  fuzzing_target(data) # Your fuzzing target would go here
   return 0
 end
 
@@ -235,6 +240,13 @@ LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
 See [libFuzzer options](https://llvm.org/docs/LibFuzzer.html#options) for more information.
 
 To fuzz your own target, modify the `test_one_input` `lambda` to call your target function.
+
+# Trophy case
+
+Bugs found using Ruzzy:
+
+- Ruby `toml` gem: [#76](https://github.com/jm/toml/issues/76)
+- Ruby `toml-rb` gem: [#150](https://github.com/emancu/toml-rb/issues/150)
 
 # Developing
 
