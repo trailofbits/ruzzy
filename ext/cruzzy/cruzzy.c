@@ -194,11 +194,11 @@ static void event_hook_branch(VALUE counter_hash, rb_trace_arg_t *tracearg) {
 
 static void enable_branch_coverage_hooks()
 {
-    // Call Coverage.setup(branches: true) to activate branch coverage hooks.
+    // Call Coverage.start(branches: true) to activate branch coverage hooks.
     // Branch coverage hooks will not be activated without this call despite
     // adding the event hooks. I suspect rb_set_coverages must be called
     // first, which initializes some global state that we do not have direct
-    // access to. Calling setup initializes coverage state here:
+    // access to. Calling start initializes coverage state here:
     // https://github.com/ruby/ruby/blob/v3_3_0/ext/coverage/coverage.c#L112-L120
     // If rb_set_coverages is not called, then rb_get_coverages returns a NULL
     // pointer, which appears to effectively disable coverage collection here:
@@ -207,7 +207,7 @@ static void enable_branch_coverage_hooks()
     VALUE coverage_mod = rb_const_get(rb_cObject, rb_intern("Coverage"));
     VALUE hash_arg = rb_hash_new();
     rb_hash_aset(hash_arg, ID2SYM(rb_intern("branches")), Qtrue);
-    rb_funcall(coverage_mod, rb_intern("setup"), 1, hash_arg);
+    rb_funcall(coverage_mod, rb_intern("start"), 1, hash_arg);
 }
 
 static VALUE c_trace(VALUE self, VALUE harness_path)
