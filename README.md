@@ -245,8 +245,9 @@ To fuzz your own target, modify the `test_one_input` `lambda` to call your targe
 
 Bugs found using Ruzzy:
 
-- Ruby `toml` gem: [#76](https://github.com/jm/toml/issues/76)
-- Ruby `toml-rb` gem: [#150](https://github.com/emancu/toml-rb/issues/150)
+- `toml` gem: [#76](https://github.com/jm/toml/issues/76)
+- `toml-rb` gem: [#150](https://github.com/emancu/toml-rb/issues/150)
+- `ox` gem: [#351](https://github.com/ohler55/ox/issues/351)
 
 # Developing
 
