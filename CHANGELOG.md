@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Ruzzy.c_trace_branch` to `Ruzzy.trace` to simplify interface
 - Support for `clang` back to `14.0.6`, and system `clang`, e.g. from `apt` ([#12](https://github.com/trailofbits/ruzzy/pull/12))
+- Support `RUBY_VERSION` and `LLVM_VERSION` build args when building Docker development image
 
 ### Fixed
 

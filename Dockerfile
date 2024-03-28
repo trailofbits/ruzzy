@@ -1,20 +1,35 @@
-FROM debian:12-slim
+# https://hub.docker.com/_/ruby
+ARG RUBY_VERSION=3.3
+
+FROM ruby:$RUBY_VERSION-slim-bookworm
+
+RUN apt update && apt install -y \
+    ca-certificates \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# LLVM builds version 15-18 for Debian 12 (Bookworm)
+# https://apt.llvm.org/bookworm/dists/
+ARG LLVM_VERSION=18
+
+RUN echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" > /etc/apt/sources.list.d/llvm.list
+RUN echo "deb-src http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list
+RUN wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc
 
 RUN apt update && apt install -y \
     build-essential \
-    clang \
-    ruby \
-    ruby-dev \
+    clang-$LLVM_VERSION \
     && rm -rf /var/lib/apt/lists/*
 
 ENV APP_DIR="/app"
 RUN mkdir $APP_DIR
 WORKDIR $APP_DIR
 
-ENV CC="clang"
-ENV CXX="clang++"
-ENV LDSHARED="clang -shared"
-ENV LDSHAREDXX="clang++ -shared"
+ENV CC="clang-$LLVM_VERSION"
+ENV CXX="clang++-$LLVM_VERSION"
+ENV LDSHARED="clang-$LLVM_VERSION -shared"
+ENV LDSHAREDXX="clang++-$LLVM_VERSION -shared"
+ENV ASAN_SYMBOLIZER_PATH="/usr/bin/llvm-symbolizer-$LLVM_VERSION"
 
 # The MAKE variable allows overwriting the make command at runtime. This forces the
 # Ruby C extension to respect ENV variables when compiling, like CC, CFLAGS, etc.
