@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2024-03-28
+
 ### Added
 
 - Automated tests in CI for real fuzzing runs ([#10](https://github.com/trailofbits/ruzzy/issues/10))

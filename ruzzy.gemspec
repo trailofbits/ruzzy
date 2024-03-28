@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name                  = 'ruzzy'
-  s.version               = '0.6.0'
+  s.version               = '0.7.0'
   s.summary               = 'A coverage-guided fuzzer for pure Ruby code and Ruby C extensions'
   s.authors               = ['Trail of Bits']
   s.email                 = 'support@trailofbits.com'

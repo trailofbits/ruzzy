@@ -86,7 +86,7 @@ INFO: Seed: 2527961537
 ...
 ==45==ERROR: AddressSanitizer: heap-use-after-free on address 0x50c0009bab80 at pc 0xffff99ea1b44 bp 0xffffce8a67d0 sp 0xffffce8a67c8
 ...
-SUMMARY: AddressSanitizer: heap-use-after-free /var/lib/gems/3.1.0/gems/ruzzy-0.6.0/ext/dummy/dummy.c:18:24 in _c_dummy_test_one_input
+SUMMARY: AddressSanitizer: heap-use-after-free /var/lib/gems/3.1.0/gems/ruzzy-0.7.0/ext/dummy/dummy.c:18:24 in _c_dummy_test_one_input
 ...
 ==45==ABORTING
 MS: 4 EraseBytes-CopyPart-CopyPart-ChangeBit-; base unit: 410e5346bca8ee150ffd507311dd85789f2e171e
@@ -168,8 +168,8 @@ INFO: Running with entropic power schedule (0xFF, 100).
 INFO: Seed: 2311041000
 ...
 /app/ruzzy/bin/test_harness.rb:12:in `block in <top (required)>': unhandled exception
-	from /var/lib/gems/3.1.0/gems/ruzzy-0.6.0/lib/ruzzy.rb:15:in `c_fuzz'
-	from /var/lib/gems/3.1.0/gems/ruzzy-0.6.0/lib/ruzzy.rb:15:in `fuzz'
+	from /var/lib/gems/3.1.0/gems/ruzzy-0.7.0/lib/ruzzy.rb:15:in `c_fuzz'
+	from /var/lib/gems/3.1.0/gems/ruzzy-0.7.0/lib/ruzzy.rb:15:in `fuzz'
 	from /app/ruzzy/bin/test_harness.rb:35:in `<top (required)>'
 	from bin/test_tracer.rb:7:in `require_relative'
 	from bin/test_tracer.rb:7:in `<main>'
