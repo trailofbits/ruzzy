@@ -324,6 +324,7 @@ git push --tags
 - Ruby fuzzing
   - https://github.com/twistlock/kisaten
   - https://github.com/richo/afl-ruby
+  - https://github.com/krypt/FuzzBert
   - https://z2-2z.github.io/2024/jan/16/fuzzing-ruby-c-extensions-with-coverage-and-asan.html
   - https://bsidessf2018.sched.com/event/E6jC/fuzzing-ruby-and-c-extensions
 - Atheris
