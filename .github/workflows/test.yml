@@ -8,14 +8,28 @@ on:
   workflow_dispatch:
 
 jobs:
-  docker:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # https://apt.llvm.org/bookworm/dists/
+        llvm-version:
+          # TODO: add 14 to ensure support for Ubuntu 22.04. LLVM doesn't build
+          # 14 for Bookworm, so we could switch to Bullseye, or use some other
+          # means of testing against LLVM 14. We've manually confirmed 14 works,
+          # but having automated tests would ensure compatibility as development
+          # continues. Tracking upstream request here:
+          # https://github.com/opencollab/llvm-jenkins.debian.net/issues/27
+          - "15"
+          - "16"
+          - "17"
+          - "18"
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build and push
+      - name: Build image (LLVM ${{ matrix.llvm-version }})
         uses: docker/build-push-action@v5
         with:
           push: false
@@ -23,6 +37,8 @@ jobs:
           tags: ruzzy
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            LLVM_VERSION=${{ matrix.llvm-version }}
       - name: Run tests
         run: |
           docker run \
