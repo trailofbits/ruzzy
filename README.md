@@ -334,3 +334,18 @@ git push --tags
   - https://github.com/google/atheris/blob/2.3.0/src/native/core.cc
   - https://github.com/google/atheris/blob/2.3.0/src/native/tracer.cc
   - https://github.com/google/atheris/blob/2.3.0/src/native/counters.cc
+  - https://github.com/google/atheris/blob/2.3.0/src/instrument_bytecode.py
+- Coverage
+  - https://calabi-yau.space/blog/sanitizer-coverage-interface.html
+  - https://carstein.github.io/2020/05/21/writing-simple-fuzzer-4.html
+  - https://h0mbre.github.io/Fuzzing-Like-A-Caveman-5/
+  - https://github.com/mirrorer/afl/blob/master/docs/technical_details.txt
+  - https://lcamtuf.coredump.cx/afl/historical_notes.txt
+  - https://www.code-intelligence.com/blog/the-magic-behind-feedback-based-fuzzing
+  - https://blog.includesecurity.com/2024/04/coverage-guided-fuzzing-extending-instrumentation/
+  - https://git.sr.ht/~myrrc/ba-thesis/blob/master/thesis.pdf
+  - https://www.politesi.polimi.it/bitstream/10589/173614/3/2021_04_Frighetto.pdf
+  - https://wcventure.github.io/FuzzingPaper/Paper/SP18_ColLAFL.pdf
+  - https://www.ndss-symposium.org/wp-content/uploads/2020/02/24422.pdf
+  - https://mboehme.github.io/paper/ICSE22.pdf
+  - https://www.usenix.org/system/files/raid2019-wang-jinghan.pdf
