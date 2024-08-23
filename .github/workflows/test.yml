@@ -24,6 +24,7 @@ jobs:
           - "16"
           - "17"
           - "18"
+          - "19"
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3

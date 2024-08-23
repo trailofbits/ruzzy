@@ -8,9 +8,9 @@ RUN apt update && apt install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# LLVM builds version 15-18 for Debian 12 (Bookworm)
+# LLVM builds version 15-19 for Debian 12 (Bookworm)
 # https://apt.llvm.org/bookworm/dists/
-ARG LLVM_VERSION=18
+ARG LLVM_VERSION=19
 
 RUN echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" > /etc/apt/sources.list.d/llvm.list
 RUN echo "deb-src http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list
