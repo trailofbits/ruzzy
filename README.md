@@ -5,7 +5,7 @@
 
 A coverage-guided fuzzer for pure Ruby code and Ruby [C extensions](https://ruby-doc.org/3.3.0/extension_rdoc.html).
 
-Ruzzy is heavily inspired by Google's [Atheris](https://github.com/google/atheris), a Python fuzzer. Like Atheris, Ruzzy uses [libFuzzer](https://llvm.org/docs/LibFuzzer.html) for its coverage instrumentation and fuzzing engine. Ruzzy also supports [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html) and [UndefinedBehaviorSanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html) when fuzzing C extensions.
+Ruzzy is heavily inspired by Google's [Atheris](https://github.com/google/atheris), a Python fuzzer. Like Atheris, Ruzzy uses [libFuzzer](https://llvm.org/docs/LibFuzzer.html) for its coverage instrumentation and fuzzing engine. Ruzzy also supports [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html) and [UndefinedBehaviorSanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html) when fuzzing C extensions. If you'd like to learn more about the inspiration behind Ruzzy, see our paper: [Design and Implementation of a Coverage-Guided Ruby Fuzzer](https://dl.acm.org/doi/10.1145/3675741.3675749).
 
 Table of contents:
 
