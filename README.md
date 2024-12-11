@@ -248,6 +248,7 @@ Bugs found using Ruzzy:
 - `toml` gem: [#76](https://github.com/jm/toml/issues/76)
 - `toml-rb` gem: [#150](https://github.com/emancu/toml-rb/issues/150)
 - `ox` gem: [#351](https://github.com/ohler55/ox/issues/351)
+- Ruby `Marshal` garbage collector crash: [#20941](https://bugs.ruby-lang.org/issues/20941)
 
 # Developing
 
