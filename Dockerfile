@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/ruby
-ARG RUBY_VERSION=3.3
+ARG RUBY_VERSION=3.4
 
 FROM ruby:$RUBY_VERSION-slim-bookworm
 
