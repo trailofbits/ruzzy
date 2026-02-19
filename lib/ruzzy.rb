@@ -25,6 +25,11 @@ module Ruzzy
   end
 
   def dummy
+    # Load the instrumented shared object before calling fuzz so its coverage
+    # maps are registered before LLVMFuzzerRunDriver starts. Some fuzzer
+    # runtimes (e.g. LibAFL) require coverage maps to exist upfront.
+    require 'dummy/dummy'
+
     fuzz(->(data) { dummy_test_one_input(data) })
   end
 

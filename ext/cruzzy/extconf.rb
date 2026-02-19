@@ -19,6 +19,7 @@ LOGGER.level = ENV.key?('RUZZY_DEBUG') ? Logger::DEBUG : Logger::INFO
 CC = ENV.fetch('CC', 'clang')
 CXX = ENV.fetch('CXX', 'clang++')
 AR = ENV.fetch('AR', 'ar')
+LD = ENV.fetch('LD', 'ld')
 FUZZER_NO_MAIN_LIB_ENV = 'FUZZER_NO_MAIN_LIB'
 
 LOGGER.debug("Ruby CC: #{RbConfig::CONFIG['CC']}")
@@ -66,6 +67,7 @@ def merge_sanitizer_libfuzzer_lib(sanitizer_lib, fuzzer_no_main_lib, merged_outp
       '-ldl',
       '-lstdc++',
       '-shared',
+      "-fuse-ld=#{LD}",
       '-o',
       merged_output
     )
@@ -76,18 +78,24 @@ def merge_sanitizer_libfuzzer_lib(sanitizer_lib, fuzzer_no_main_lib, merged_outp
   end
 end
 
-fuzzer_no_main_libs = [
-  'libclang_rt.fuzzer_no_main.a',
-  'libclang_rt.fuzzer_no_main-aarch64.a',
-  'libclang_rt.fuzzer_no_main-x86_64.a'
-]
-fuzzer_no_main_lib = fuzzer_no_main_libs.map { |lib| get_clang_file_name(lib) }.find(&:itself)
+fuzzer_no_main_lib = ENV.fetch(FUZZER_NO_MAIN_LIB_ENV, nil)
 
-unless fuzzer_no_main_lib
-  LOGGER.warn("Could not find fuzzer_no_main using #{CC}.")
-  fuzzer_no_main_lib = ENV.fetch(FUZZER_NO_MAIN_LIB_ENV, nil)
-  if fuzzer_no_main_lib.nil?
-    LOGGER.error("Could not find fuzzer_no_main in #{FUZZER_NO_MAIN_LIB_ENV}.")
+if fuzzer_no_main_lib
+  LOGGER.info("Using #{FUZZER_NO_MAIN_LIB_ENV}=#{fuzzer_no_main_lib}")
+  unless File.exist?(fuzzer_no_main_lib)
+    LOGGER.error("#{FUZZER_NO_MAIN_LIB_ENV} file does not exist: #{fuzzer_no_main_lib}")
+    exit(1)
+  end
+else
+  fuzzer_no_main_libs = [
+    'libclang_rt.fuzzer_no_main.a',
+    'libclang_rt.fuzzer_no_main-aarch64.a',
+    'libclang_rt.fuzzer_no_main-x86_64.a'
+  ]
+  fuzzer_no_main_lib = fuzzer_no_main_libs.map { |lib| get_clang_file_name(lib) }.find(&:itself)
+
+  unless fuzzer_no_main_lib
+    LOGGER.error("Could not find fuzzer_no_main using #{CC}.")
     LOGGER.error("Please include #{CC} in your path or specify #{FUZZER_NO_MAIN_LIB_ENV} ENV variable.")
     exit(1)
   end
@@ -136,7 +144,14 @@ merge_sanitizer_libfuzzer_lib(
 # The LOCAL_LIBS variable allows linking arbitrary libraries into Ruby C
 # extensions. It is supported by the Ruby mkmf library and C extension Makefile.
 # For more information, see https://github.com/ruby/ruby/blob/master/lib/mkmf.rb.
-$LOCAL_LIBS = fuzzer_no_main_lib
+#
+# When using an alternative fuzzer runtime (e.g. LibAFL) that is already merged
+# into the sanitizer shared objects, set FUZZER_NO_MAIN_LINK_IN_EXTENSION=0 to
+# skip linking the fuzzer library directly into cruzzy.so. The symbols will be
+# resolved at runtime from the LD_PRELOADed sanitizer DSO instead.
+if ENV.fetch('FUZZER_NO_MAIN_LINK_IN_EXTENSION', '1') != '0'
+  $LOCAL_LIBS = fuzzer_no_main_lib
+end
 
 $LIBS << ' -lstdc++'
 

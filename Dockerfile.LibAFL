@@ -1,0 +1,101 @@
+# Stage 1: Build LibAFL's libFuzzer compatibility library
+ARG RUBY_VERSION=4.0
+ARG LLVM_VERSION=21
+
+FROM debian:bookworm-slim AS libafl-builder
+
+ARG LLVM_VERSION
+
+RUN apt update && apt install -y \
+    ca-certificates \
+    wget \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install LLVM (needed for clang linker during Rust build)
+RUN echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" > /etc/apt/sources.list.d/llvm.list \
+    && echo "deb-src http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list \
+    && wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc \
+    && apt update && apt install -y \
+    clang-$LLVM_VERSION \
+    llvm-$LLVM_VERSION \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust nightly via rustup
+RUN wget -qO- https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Add llvm-tools for Rust
+RUN rustup component add llvm-tools
+
+# Clone LibAFL
+RUN git clone --depth 1 https://github.com/AFLplusplus/LibAFL /libafl
+
+# Build libFuzzer.a from LibAFL's libfuzzer runtime
+WORKDIR /libafl/crates/libafl_libfuzzer_runtime
+
+ENV RUSTFLAGS="-C linker=clang-${LLVM_VERSION}"
+ENV LLVM_CONFIG="llvm-config-${LLVM_VERSION}"
+
+RUN bash build.sh
+
+# Stage 2: Build ruzzy with LibAFL's libFuzzer
+FROM ruby:$RUBY_VERSION-slim-bookworm
+
+RUN apt update && apt install -y \
+    ca-certificates \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG LLVM_VERSION
+
+RUN echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" > /etc/apt/sources.list.d/llvm.list \
+    && echo "deb-src http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list \
+    && wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+
+# Install lld alongside clang. LibAFL's libFuzzer.a contains a .preinit_array
+# section that the GNU linker rejects in shared objects. lld handles this correctly.
+RUN apt update && apt install -y \
+    build-essential \
+    clang-$LLVM_VERSION \
+    lld-$LLVM_VERSION \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV APP_DIR="/app"
+RUN mkdir $APP_DIR
+WORKDIR $APP_DIR
+
+ENV CC="clang-$LLVM_VERSION"
+ENV CXX="clang++-$LLVM_VERSION"
+ENV LDSHARED="clang-$LLVM_VERSION -shared"
+ENV LDSHAREDXX="clang++-$LLVM_VERSION -shared"
+ENV ASAN_SYMBOLIZER_PATH="/usr/bin/llvm-symbolizer-$LLVM_VERSION"
+
+# Use lld for linking. LibAFL's libFuzzer.a contains a .preinit_array section
+# that the GNU linker rejects in shared objects. lld handles this correctly.
+ENV LD="lld-$LLVM_VERSION"
+
+ENV MAKE="make --environment-overrides V=1"
+
+ENV ASAN_OPTIONS="allocator_may_return_null=1:detect_leaks=0:use_sigaltstack=0"
+
+# Copy LibAFL's libFuzzer.a from builder stage
+COPY --from=libafl-builder /libafl/crates/libafl_libfuzzer_runtime/libFuzzer.a /usr/lib/libFuzzer.a
+
+# Point ruzzy at LibAFL's libFuzzer instead of clang's built-in
+ENV FUZZER_NO_MAIN_LIB="/usr/lib/libFuzzer.a"
+
+# Don't link LibAFL's libFuzzer.a into cruzzy.so directly. It will be merged
+# into the sanitizer DSOs (asan_with_fuzzer.so) which are LD_PRELOADed at
+# runtime, making LLVMFuzzerRunDriver and __sanitizer_cov_* symbols available
+# globally. This avoids duplicate LibAFL state across shared objects.
+ENV FUZZER_NO_MAIN_LINK_IN_EXTENSION="0"
+
+WORKDIR ruzzy/
+COPY . .
+RUN gem build
+RUN RUZZY_DEBUG=1 gem install --development --verbose ruzzy-*.gem
+
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["-help=1"]
