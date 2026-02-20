@@ -78,7 +78,7 @@ ENV LD="lld-$LLVM_VERSION"
 
 ENV MAKE="make --environment-overrides V=1"
 
-ENV ASAN_OPTIONS="allocator_may_return_null=1:detect_leaks=0:use_sigaltstack=0"
+ENV ASAN_OPTIONS="symbolize=1:allocator_may_return_null=1:detect_leaks=0:use_sigaltstack=0"
 
 # Copy LibAFL's libFuzzer.a from builder stage
 COPY --from=libafl-builder /libafl/crates/libafl_libfuzzer_runtime/libFuzzer.a /usr/lib/libFuzzer.a
