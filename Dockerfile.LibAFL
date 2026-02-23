@@ -1,6 +1,6 @@
 # Stage 1: Build LibAFL's libFuzzer compatibility library
 ARG RUBY_VERSION=4.0
-ARG LLVM_VERSION=21
+ARG LLVM_VERSION=22
 
 FROM debian:bookworm-slim AS libafl-builder
 
