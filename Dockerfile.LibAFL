@@ -1,8 +1,8 @@
 # Stage 1: Build LibAFL's libFuzzer compatibility library
 ARG RUBY_VERSION=4.0
-ARG LLVM_VERSION=21
+ARG LLVM_VERSION=22
 
-FROM debian:bookworm-slim AS libafl-builder
+FROM debian:trixie-slim AS libafl-builder
 
 ARG LLVM_VERSION
 
@@ -14,8 +14,8 @@ RUN apt update && apt install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install LLVM (needed for clang linker during Rust build)
-RUN echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" > /etc/apt/sources.list.d/llvm.list \
-    && echo "deb-src http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list \
+RUN echo "deb http://apt.llvm.org/trixie/ llvm-toolchain-trixie-$LLVM_VERSION main" > /etc/apt/sources.list.d/llvm.list \
+    && echo "deb-src http://apt.llvm.org/trixie/ llvm-toolchain-trixie-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list \
     && wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc \
     && apt update && apt install -y \
     clang-$LLVM_VERSION \
@@ -41,7 +41,7 @@ ENV LLVM_CONFIG="llvm-config-${LLVM_VERSION}"
 RUN bash build.sh
 
 # Stage 2: Build ruzzy with LibAFL's libFuzzer
-FROM ruby:$RUBY_VERSION-slim-bookworm
+FROM ruby:$RUBY_VERSION-slim-trixie
 
 RUN apt update && apt install -y \
     ca-certificates \
@@ -50,8 +50,8 @@ RUN apt update && apt install -y \
 
 ARG LLVM_VERSION
 
-RUN echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" > /etc/apt/sources.list.d/llvm.list \
-    && echo "deb-src http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list \
+RUN echo "deb http://apt.llvm.org/trixie/ llvm-toolchain-trixie-$LLVM_VERSION main" > /etc/apt/sources.list.d/llvm.list \
+    && echo "deb-src http://apt.llvm.org/trixie/ llvm-toolchain-trixie-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list \
     && wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc
 
 # Install lld alongside clang. LibAFL's libFuzzer.a contains a .preinit_array

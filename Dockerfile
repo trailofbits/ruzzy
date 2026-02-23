@@ -1,19 +1,19 @@
 # https://hub.docker.com/_/ruby
 ARG RUBY_VERSION=4.0
 
-FROM ruby:$RUBY_VERSION-slim-bookworm
+FROM ruby:$RUBY_VERSION-slim-trixie
 
 RUN apt update && apt install -y \
     ca-certificates \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# LLVM builds version 15-21 for Debian 12 (Bookworm)
-# https://apt.llvm.org/bookworm/dists/
-ARG LLVM_VERSION=21
+# LLVM builds version 15-22 for Debian 13 (Trixie)
+# https://apt.llvm.org/trixie/dists/
+ARG LLVM_VERSION=22
 
-RUN echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" > /etc/apt/sources.list.d/llvm.list
-RUN echo "deb-src http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list
+RUN echo "deb http://apt.llvm.org/trixie/ llvm-toolchain-trixie-$LLVM_VERSION main" > /etc/apt/sources.list.d/llvm.list
+RUN echo "deb-src http://apt.llvm.org/trixie/ llvm-toolchain-trixie-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list
 RUN wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc
 
 RUN apt update && apt install -y \

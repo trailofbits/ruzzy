@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # https://apt.llvm.org/bookworm/dists/
+        # https://apt.llvm.org/trixie/dists/
         llvm-version:
           # TODO: add 14 to ensure support for Ubuntu 22.04. LLVM doesn't build
-          # 14 for Bookworm, so we could switch to Bullseye, or use some other
+          # 14 for Trixie, so we could switch to Bullseye, or use some other
           # means of testing against LLVM 14. We've manually confirmed 14 works,
           # but having automated tests would ensure compatibility as development
           # continues. Tracking upstream request here:
@@ -27,6 +27,7 @@ jobs:
           - "19"
           - "20"
           - "21"
+          - "22"
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
