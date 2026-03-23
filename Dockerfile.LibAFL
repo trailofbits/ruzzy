@@ -86,12 +86,6 @@ COPY --from=libafl-builder /libafl/crates/libafl_libfuzzer_runtime/libFuzzer.a /
 # Point ruzzy at LibAFL's libFuzzer instead of clang's built-in
 ENV FUZZER_NO_MAIN_LIB="/usr/lib/libFuzzer.a"
 
-# Don't link LibAFL's libFuzzer.a into cruzzy.so directly. It will be merged
-# into the sanitizer DSOs (asan_with_fuzzer.so) which are LD_PRELOADed at
-# runtime, making LLVMFuzzerRunDriver and __sanitizer_cov_* symbols available
-# globally. This avoids duplicate LibAFL state across shared objects.
-ENV FUZZER_NO_MAIN_LINK_IN_EXTENSION="0"
-
 WORKDIR ruzzy/
 COPY . .
 RUN gem build

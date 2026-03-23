@@ -144,15 +144,9 @@ merge_sanitizer_libfuzzer_lib(
 # The LOCAL_LIBS variable allows linking arbitrary libraries into Ruby C
 # extensions. It is supported by the Ruby mkmf library and C extension Makefile.
 # For more information, see https://github.com/ruby/ruby/blob/master/lib/mkmf.rb.
-#
-# When using an alternative fuzzer runtime (e.g. LibAFL) that is already merged
-# into the sanitizer shared objects, set FUZZER_NO_MAIN_LINK_IN_EXTENSION=0 to
-# skip linking the fuzzer library directly into cruzzy.so. The symbols will be
-# resolved at runtime from the LD_PRELOADed sanitizer DSO instead.
-if ENV.fetch('FUZZER_NO_MAIN_LINK_IN_EXTENSION', '1') != '0'
-  $LOCAL_LIBS = fuzzer_no_main_lib
-end
+$LOCAL_LIBS = fuzzer_no_main_lib
 
 $LIBS << ' -lstdc++'
+$DLDFLAGS << " -fuse-ld=#{LD}"
 
 create_makefile('cruzzy/cruzzy')
