@@ -23,11 +23,12 @@ RUN echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSIO
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust nightly via rustup
-RUN wget -qO- https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
-ENV PATH="/root/.cargo/bin:${PATH}"
+RUN wget -qO- https://sh.rustup.rs | sh -s -- \
+    -y \
+    --default-toolchain nightly \
+    --component llvm-tools
 
-# Add llvm-tools for Rust
-RUN rustup component add llvm-tools
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Clone LibAFL
 RUN git clone --depth 1 https://github.com/AFLplusplus/LibAFL /libafl
