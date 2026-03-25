@@ -13,13 +13,12 @@ RUN apt update && apt install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install LLVM (needed for clang linker during Rust build)
+# Need libclang-dev for Rust bindgen crate to parse C/C++ headers
 RUN echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" > /etc/apt/sources.list.d/llvm.list \
     && echo "deb-src http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list \
     && wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc \
     && apt update && apt install -y \
-    clang-$LLVM_VERSION \
-    llvm-$LLVM_VERSION \
+    libclang-$LLVM_VERSION-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust nightly via rustup
@@ -35,9 +34,6 @@ RUN git clone --depth 1 https://github.com/AFLplusplus/LibAFL /libafl
 
 # Build libFuzzer.a from LibAFL's libfuzzer runtime
 WORKDIR /libafl/crates/libafl_libfuzzer_runtime
-
-ENV RUSTFLAGS="-C linker=clang-${LLVM_VERSION}"
-ENV LLVM_CONFIG="llvm-config-${LLVM_VERSION}"
 
 RUN bash build.sh
 
