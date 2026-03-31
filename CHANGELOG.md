@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - LibAFL support
 - Ruby 4.0 support
+- `FuzzedDataProvider` support via `Ruzzy::FuzzedDataProvider`
 
 ## [0.7.0] - 2024-03-28
 

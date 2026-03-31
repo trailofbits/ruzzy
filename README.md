@@ -14,6 +14,8 @@ Table of contents:
   - [Getting started](#getting-started)
   - [Fuzzing pure Ruby code](#fuzzing-pure-ruby-code)
   - [Fuzzing Ruby C extensions](#fuzzing-ruby-c-extensions)
+- [API](#api)
+  - [FuzzedDataProvider](#fuzzeddataprovider)
 - [Trophy case](#trophy-case)
 - [Developing](#developing)
   - [Compiling](#compiling)
@@ -240,6 +242,43 @@ LD_PRELOAD=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
 See [libFuzzer options](https://llvm.org/docs/LibFuzzer.html#options) for more information.
 
 To fuzz your own target, modify the `test_one_input` `lambda` to call your target function.
+
+# API
+
+## FuzzedDataProvider
+
+`Ruzzy::FuzzedDataProvider` [splits](https://github.com/google/fuzzing/blob/master/docs/split-inputs.md) raw fuzzer bytes into typed Ruby values.
+
+```ruby
+test_one_input = lambda do |data|
+  fdp = Ruzzy::FuzzedDataProvider.new(data)
+  name = fdp.consume_random_length_string(50)
+  age = fdp.consume_int_in_range(0, 150)
+  score = fdp.consume_float_in_range(0.0, 100.0)
+  role = fdp.pick_value_in_list(['admin', 'user', 'guest'])
+  User.new(name: name, age: age, score: score, role: role).validate!
+end
+
+Ruzzy.fuzz(test_one_input)
+```
+
+| Method | Description | Returns |
+|--------|-------------|---------|
+| `remaining_bytes` | Number of unconsumed bytes remaining | `Integer` |
+| `consume_bytes(count)` | Consume up to `count` raw bytes | binary `String` |
+| `consume_random_length_string(max_length)` | Consume a variable-length string; terminates on `\` + non-`\` byte | `String` |
+| `consume_remaining_bytes` | Consume all remaining bytes | binary `String` |
+| `consume_remaining_as_string` | Alias for `consume_remaining_bytes` | binary `String` |
+| `consume_uint(count)` | Unsigned integer from `count` bytes | `Integer` |
+| `consume_int(count)` | Signed (two's complement) integer from `count` bytes | `Integer` |
+| `consume_int_in_range(min, max)` | Integer uniformly distributed in [`min`, `max`] | `Integer` |
+| `consume_bool` | Boolean from one byte (LSB) | `true`/`false` |
+| `consume_float` | Float spanning the full double range | `Float` |
+| `consume_float_in_range(min, max)` | Float in [`min`, `max`] | `Float` |
+| `consume_probability` | Float in [0.0, 1.0] | `Float` |
+| `pick_value_in_list(list)` | Random element from `list` | element |
+
+All methods return default values (`0`, `""`, `false`, `min`) when data is exhausted.
 
 # Trophy case
 

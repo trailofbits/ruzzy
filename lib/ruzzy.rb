@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'pathname'
+require 'ruzzy/fuzzed_data_provider'
 
 # A coverage-guided fuzzer for pure Ruby code and Ruby C extensions
 module Ruzzy
