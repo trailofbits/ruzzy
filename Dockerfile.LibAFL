@@ -35,7 +35,7 @@ RUN git clone --depth 1 https://github.com/AFLplusplus/LibAFL /libafl
 # Build libFuzzer.a from LibAFL's libfuzzer runtime
 WORKDIR /libafl/crates/libafl_libfuzzer_runtime
 
-RUN bash build.sh
+RUN bash build.sh --cargo-args "--no-default-features --features no_link_main"
 
 # Stage 2: Build ruzzy with LibAFL's libFuzzer
 FROM ruby:$RUBY_VERSION-slim-bookworm
@@ -51,12 +51,9 @@ RUN echo "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSIO
     && echo "deb-src http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$LLVM_VERSION main" >> /etc/apt/sources.list.d/llvm.list \
     && wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key > /etc/apt/trusted.gpg.d/apt.llvm.org.asc
 
-# Install lld alongside clang. LibAFL's libFuzzer.a contains a .preinit_array
-# section that the GNU linker rejects in shared objects. lld handles this correctly.
 RUN apt update && apt install -y \
     build-essential \
     clang-$LLVM_VERSION \
-    lld-$LLVM_VERSION \
     && rm -rf /var/lib/apt/lists/*
 
 ENV APP_DIR="/app"
@@ -68,10 +65,6 @@ ENV CXX="clang++-$LLVM_VERSION"
 ENV LDSHARED="clang-$LLVM_VERSION -shared"
 ENV LDSHAREDXX="clang++-$LLVM_VERSION -shared"
 ENV ASAN_SYMBOLIZER_PATH="/usr/bin/llvm-symbolizer-$LLVM_VERSION"
-
-# Use lld for linking. LibAFL's libFuzzer.a contains a .preinit_array section
-# that the GNU linker rejects in shared objects. lld handles this correctly.
-ENV LD="lld-$LLVM_VERSION"
 
 ENV MAKE="make --environment-overrides V=1"
 
