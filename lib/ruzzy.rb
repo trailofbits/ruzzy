@@ -7,7 +7,12 @@ require 'ruzzy/fuzzed_data_provider'
 module Ruzzy
   require 'cruzzy/cruzzy'
 
-  DEFAULT_ARGS = [$PROGRAM_NAME] + ARGV
+  # libFuzzer features like -merge and -fork re-execute argv[0] via system().
+  # RUZZY_ARGV0 allows a wrapper script (e.g. entrypoint.sh) to advertise its
+  # own path as argv[0], so re-execution goes through the wrapper that sets
+  # LD_PRELOAD and other required environment.
+  ARGV0 = ENV.fetch('RUZZY_ARGV0', $PROGRAM_NAME)
+  DEFAULT_ARGS = [ARGV0] + ARGV
   EXT_PATH = Pathname.new(__FILE__).parent.parent / 'ext' / 'cruzzy'
   ASAN_PATH = (EXT_PATH / 'asan_with_fuzzer.so').to_s
   UBSAN_PATH = (EXT_PATH / 'ubsan_with_fuzzer.so').to_s
