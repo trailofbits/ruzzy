@@ -66,7 +66,7 @@ jobs:
           brew install llvm@${{ matrix.llvm-version }}
           echo "/opt/homebrew/opt/llvm@${{ matrix.llvm-version }}/bin" >> "$GITHUB_PATH"
       - run: gem build
-      - run: gem install --verbose ruzzy-*.gem
+      - run: gem install --verbose --development ruzzy-*.gem
         env:
           RUZZY_DEBUG: "1"
           MAKE: "make --environment-overrides V=1"
