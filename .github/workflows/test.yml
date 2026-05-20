@@ -58,13 +58,11 @@ jobs:
             llvm-version: "21"
     steps:
       - uses: actions/checkout@v4
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby-version }}
-      - name: Install Homebrew LLVM
+      - name: Install Homebrew LLVM and Ruby
         run: |
-          brew install llvm@${{ matrix.llvm-version }}
-          echo "/opt/homebrew/opt/llvm@${{ matrix.llvm-version }}/bin" >> "$GITHUB_PATH"
+          brew install llvm@${{ matrix.llvm-version }} ruby@${{ matrix.ruby-version }}
+          echo "$(brew --prefix llvm@${{ matrix.llvm-version }})/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix ruby@${{ matrix.ruby-version }})/bin" >> "$GITHUB_PATH"
       - run: gem build
       - run: gem install --verbose --development ruzzy-*.gem
         env:
@@ -76,7 +74,8 @@ jobs:
           LDSHAREDXX: clang++ -dynamic -bundle -undefined dynamic_lookup
       - name: Run tests
         run: |
-          LOADER=$(arch -arm64 ruby -rrake -e 'puts Gem.loaded_specs["rake"].full_gem_path')/lib/rake/rake_test_loader.rb \
-          DYLD_INSERT_LIBRARIES=$(arch -arm64 ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
+          # Need this rake loader hack to avoid SIP-protected programs that strip DYLD_*
+          LOADER=$(ruby -rrake -e 'puts Gem.loaded_specs["rake"].full_gem_path')/lib/rake/rake_test_loader.rb \
+          DYLD_INSERT_LIBRARIES=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
           ASAN_OPTIONS="allocator_may_return_null=1:detect_leaks=0:use_sigaltstack=0:abort_on_error=0" \
-            arch -arm64 ruby -w -Ilib "$LOADER" test/test_*.rb
+            ruby -w -Ilib "$LOADER" test/test_*.rb
