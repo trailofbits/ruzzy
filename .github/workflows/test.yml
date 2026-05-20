@@ -73,8 +73,8 @@ jobs:
           LDSHARED: clang -dynamic -bundle -undefined dynamic_lookup
           LDSHAREDXX: clang++ -dynamic -bundle -undefined dynamic_lookup
       - name: Run tests
+        # Need this rake loader hack to avoid SIP-protected programs that strip DYLD_*
         run: |
-          # Need this rake loader hack to avoid SIP-protected programs that strip DYLD_*
           LOADER=$(ruby -rrake -e 'puts Gem.loaded_specs["rake"].full_gem_path')/lib/rake/rake_test_loader.rb \
           DYLD_INSERT_LIBRARIES=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
           ASAN_OPTIONS="allocator_may_return_null=1:detect_leaks=0:use_sigaltstack=0:abort_on_error=0" \
