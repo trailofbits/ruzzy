@@ -14,8 +14,9 @@ module Ruzzy
   ARGV0 = ENV.fetch('RUZZY_ARGV0', $PROGRAM_NAME)
   DEFAULT_ARGS = [ARGV0] + ARGV
   EXT_PATH = Pathname.new(__FILE__).parent.parent / 'ext' / 'cruzzy'
-  ASAN_PATH = (EXT_PATH / 'asan_with_fuzzer.so').to_s
-  UBSAN_PATH = (EXT_PATH / 'ubsan_with_fuzzer.so').to_s
+  DLEXT = RbConfig::CONFIG['host_os'] =~ /darwin/ ? 'dylib' : 'so'
+  ASAN_PATH = (EXT_PATH / "asan_with_fuzzer.#{DLEXT}").to_s
+  UBSAN_PATH = (EXT_PATH / "ubsan_with_fuzzer.#{DLEXT}").to_s
 
   def fuzz(test_one_input, args = DEFAULT_ARGS)
     c_fuzz(test_one_input, args)
