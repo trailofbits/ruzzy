@@ -16,6 +16,7 @@ Table of contents:
   - [Fuzzing Ruby C extensions](#fuzzing-ruby-c-extensions)
 - [API](#api)
   - [FuzzedDataProvider](#fuzzeddataprovider)
+- [Notes for macOS users](#notes-for-macos-users)
 - [Trophy case](#trophy-case)
 - [Developing](#developing)
   - [Compiling](#compiling)
@@ -26,7 +27,7 @@ Table of contents:
 
 # Installing
 
-Currently, Ruzzy only supports Linux x86-64 and AArch64/ARM64. If you'd like to run Ruzzy on a Mac or Windows, you can build the [`Dockerfile`](https://github.com/trailofbits/ruzzy/blob/main/Dockerfile) and/or use the [development environment](#developing). Ruzzy requires a recent version of `clang` (tested back to `14.0.0`), preferably the [latest release](https://github.com/llvm/llvm-project/releases).
+Ruzzy supports Linux (x86-64, AArch64/ARM64) and macOS (Apple Silicon). On Windows, you can build the [`Dockerfile`](https://github.com/trailofbits/ruzzy/blob/main/Dockerfile) and/or use the [development environment](#developing). Ruzzy requires a recent version of `clang` (tested back to `14.0.0`), preferably the [latest release](https://github.com/llvm/llvm-project/releases). For macOS-specific setup, see [notes for macOS users](#notes-for-macos-users).
 
 Install Ruzzy with the following command:
 
@@ -279,6 +280,51 @@ Ruzzy.fuzz(test_one_input)
 | `pick_value_in_list(list)` | Random element from `list` | element |
 
 All methods return default values (`0`, `""`, `false`, `min`) when data is exhausted.
+
+# Notes for macOS users
+
+Ruzzy on macOS requires Homebrew-installed LLVM (Apple Clang does not include libFuzzer) and a non-system Ruby (the system Ruby at `/usr/bin/ruby` is SIP-protected, which strips `DYLD_*` environment variables before Ruby starts).
+
+## Prerequisites
+
+```bash
+brew install llvm ruby
+```
+
+Any non-system Ruby works (`brew`, `rbenv`, `asdf`), but see the [caveats](#caveats) below for shim-based version managers.
+
+## Installing
+
+Use the Homebrew Clang paths and macOS-appropriate linker flags:
+
+```bash
+MAKE="make --environment-overrides V=1" \
+CC="$(brew --prefix llvm)/bin/clang" \
+CXX="$(brew --prefix llvm)/bin/clang++" \
+LDSHARED="$(brew --prefix llvm)/bin/clang -dynamic -bundle -undefined dynamic_lookup" \
+LDSHAREDXX="$(brew --prefix llvm)/bin/clang++ -dynamic -bundle -undefined dynamic_lookup" \
+    gem install ruzzy
+```
+
+## Running
+
+Use `DYLD_INSERT_LIBRARIES` instead of `LD_PRELOAD`:
+
+```bash
+DYLD_INSERT_LIBRARIES=$(ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
+    ruby -e 'require "ruzzy"; Ruzzy.dummy'
+```
+
+`Ruzzy::ASAN_PATH` and `Ruzzy::UBSAN_PATH` resolve to `.dylib` files on macOS.
+
+## Caveats
+
+- **Version manager shims (`asdf`, `rbenv`) strip `DYLD_*` env vars.** These shims use `#!/usr/bin/env bash` and `/usr/bin/env` is SIP-protected, so macOS strips `DYLD_INSERT_LIBRARIES` before Ruby starts. Either use Homebrew Ruby (which has no shim) or invoke the absolute path to the installed Ruby binary:
+  ```bash
+  DYLD_INSERT_LIBRARIES=$(/path/to/ruby -e 'require "ruzzy"; print Ruzzy::ASAN_PATH') \
+      /path/to/ruby your_fuzzer.rb
+  ```
+- **Recent LLVM required.** Some older versions of Homebrew LLVM (notably 19.x) have a bug where `DYLD_INSERT_LIBRARIES`'ing the ASan dylib hangs the process during startup. If you see Ruzzy hang on launch, update Homebrew LLVM (`brew upgrade llvm`).
 
 # Trophy case
 

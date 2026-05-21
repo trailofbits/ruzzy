@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- macOS support for pure Ruby and C extension fuzzing ([#11](https://github.com/trailofbits/ruzzy/issues/11))
+
+### Changed
+
+- Fixed argv0 handling of libFuzzer re-exec commands ([#30](https://github.com/trailofbits/ruzzy/issues/30))
+
 ## [0.8.0] - 2026-04-27
 
 ### Added

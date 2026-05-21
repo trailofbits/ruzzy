@@ -9,27 +9,44 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         # https://www.ruby-lang.org/en/downloads/branches/
-        ruby-version:
-          - "3.2"
-          - "3.3"
-          - "3.4"
-          - "4.0"
+        include:
+          - os: ubuntu-latest
+            ruby-version: "3.2"
+            ldshared-flags: "-shared"
+          - os: ubuntu-latest
+            ruby-version: "3.3"
+            ldshared-flags: "-shared"
+          - os: ubuntu-latest
+            ruby-version: "3.4"
+            ldshared-flags: "-shared"
+          - os: ubuntu-latest
+            ruby-version: "4.0"
+            ldshared-flags: "-shared"
+          - os: macos-latest
+            ruby-version: "4.0"
+            ldshared-flags: "-dynamic -bundle -undefined dynamic_lookup"
     steps:
       - uses: actions/checkout@v4
       - name: Set up Ruby ${{ matrix.ruby-version }}
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
+      - name: Install Homebrew LLVM
+        if: runner.os == 'macOS'
+        run: |
+          brew install llvm
+          echo "/opt/homebrew/opt/llvm/bin" >> "$GITHUB_PATH"
       - run: gem build
       - run: gem install --verbose ruzzy-*.gem
         env:
           RUZZY_DEBUG: "1"
           MAKE: "make --environment-overrides V=1"
-          CC: "clang"
-          CXX: "clang++"
-          LDSHARED: "clang -shared"
-          LDSHAREDXX: "clang++ -shared"
+          CC: clang
+          CXX: clang++
+          LDSHARED: clang ${{ matrix.ldshared-flags }}
+          LDSHAREDXX: clang++ ${{ matrix.ldshared-flags }}
