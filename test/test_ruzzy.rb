@@ -20,6 +20,8 @@ EXPECTED_OUTPUT_SUCCESS = 'ERROR: AddressSanitizer: heap-use-after-free'
 EXPECTED_OUTPUT_BRANCH = 'RuntimeError: TEST HARNESS BRANCH'
 EXPECTED_OUTPUT_CMP = 'RuntimeError: TEST HARNESS CMP'
 EXPECTED_OUTPUT_DIV = 'RuntimeError: TEST HARNESS DIV'
+EXPECTED_OUTPUT_CASE_STRING = 'RuntimeError: TEST HARNESS CASE STRING'
+EXPECTED_OUTPUT_CASE_INTEGER = 'RuntimeError: TEST HARNESS CASE INTEGER'
 
 def fork_function(func)
   reader, writer = IO.pipe
@@ -157,6 +159,23 @@ class RuzzyTest < Test::Unit::TestCase
     output, status = run_tracer('harness_div.rb')
 
     assert_include(output, EXPECTED_OUTPUT_DIV)
+    assert_equal(status.exitstatus, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+  end
+
+  # This tracing signal comes from ASan's memcmp interceptor feeding libFuzzer's
+  # auto-dictionary via __sanitizer_weak_hook_memcmp, not from any explicit
+  # String patch.
+  def test_trace_case_string
+    output, status = run_tracer('harness_case_string.rb')
+
+    assert_include(output, EXPECTED_OUTPUT_CASE_STRING)
+    assert_equal(status.exitstatus, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+  end
+
+  def test_trace_case_integer
+    output, status = run_tracer('harness_case_integer.rb')
+
+    assert_include(output, EXPECTED_OUTPUT_CASE_INTEGER)
     assert_equal(status.exitstatus, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
   end
 
