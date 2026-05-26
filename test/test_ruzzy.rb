@@ -68,6 +68,19 @@ def run_tracer(tracer_script)
   fork_function(func)
 end
 
+# Linux defaults to abort_on_error=0 while macOS is abort_on_error=1. Account
+# for this discrepancy using this function. We could set abort_on_error=0 in
+# ASAN_OPTIONS, but solving it here is easier than remembering to set an ENV
+# variable everywhere.
+def assert_status(status, expected_exitcode)
+  exited_with_expected = status.exited? && status.exitstatus == expected_exitcode
+  aborted = status.signaled? && status.termsig == Signal.list['ABRT']
+  assert(
+    exited_with_expected || aborted,
+    "expected exit #{expected_exitcode} or SIGABRT, got #{status.inspect}"
+  )
+end
+
 class RuzzyTest < Test::Unit::TestCase
   def test_c_libfuzzer_is_loaded
     result = Ruzzy.c_libfuzzer_is_loaded
@@ -102,7 +115,7 @@ class RuzzyTest < Test::Unit::TestCase
     output, status, artifact = run_fuzzer(dummy_test_one_input)
 
     assert_include(output, EXPECTED_OUTPUT_RETURN)
-    assert_equal(status.exitstatus, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
     assert_empty(artifact)
   end
 
@@ -115,7 +128,7 @@ class RuzzyTest < Test::Unit::TestCase
     expected_artifact = 'HI'
 
     assert_include(output, EXPECTED_OUTPUT_SUCCESS)
-    assert_equal(status.exitstatus, LIBFUZZER_DEFAULT_SUCCESS_EXITCODE)
+    assert_status(status, LIBFUZZER_DEFAULT_SUCCESS_EXITCODE)
     assert_equal(artifact, expected_artifact)
   end
 
@@ -145,21 +158,21 @@ class RuzzyTest < Test::Unit::TestCase
     output, status = run_tracer('harness_branch.rb')
 
     assert_include(output, EXPECTED_OUTPUT_BRANCH)
-    assert_equal(status.exitstatus, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
   end
 
   def test_trace_cmp
     output, status = run_tracer('harness_cmp.rb')
 
     assert_include(output, EXPECTED_OUTPUT_CMP)
-    assert_equal(status.exitstatus, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
   end
 
   def test_trace_div
     output, status = run_tracer('harness_div.rb')
 
     assert_include(output, EXPECTED_OUTPUT_DIV)
-    assert_equal(status.exitstatus, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
   end
 
   # This tracing signal comes from ASan's memcmp interceptor feeding libFuzzer's
@@ -169,14 +182,14 @@ class RuzzyTest < Test::Unit::TestCase
     output, status = run_tracer('harness_case_string.rb')
 
     assert_include(output, EXPECTED_OUTPUT_CASE_STRING)
-    assert_equal(status.exitstatus, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
   end
 
   def test_trace_case_integer
     output, status = run_tracer('harness_case_integer.rb')
 
     assert_include(output, EXPECTED_OUTPUT_CASE_INTEGER)
-    assert_equal(status.exitstatus, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
   end
 
   def test_ext_path
