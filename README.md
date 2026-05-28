@@ -5,7 +5,7 @@
 
 A coverage-guided fuzzer for pure Ruby code and Ruby [C extensions](https://ruby-doc.org/3.3.0/extension_rdoc.html).
 
-Ruzzy is heavily inspired by Google's [Atheris](https://github.com/google/atheris), a Python fuzzer. Like Atheris, Ruzzy uses [libFuzzer](https://llvm.org/docs/LibFuzzer.html) for its coverage instrumentation and fuzzing engine. Ruzzy also supports [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html) and [UndefinedBehaviorSanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html) when fuzzing C extensions. If you'd like to learn more about the inspiration behind Ruzzy, see our paper: [Design and Implementation of a Coverage-Guided Ruby Fuzzer](https://dl.acm.org/doi/10.1145/3675741.3675749).
+Ruzzy is heavily inspired by Google's [Atheris](https://github.com/google/atheris), a Python fuzzer. Ruzzy uses [libFuzzer](https://llvm.org/docs/LibFuzzer.html) (or [LibAFL](https://github.com/trailofbits/ruzzy/blob/main/Dockerfile.LibAFL)) for its coverage instrumentation and fuzzing engine. Ruzzy also supports [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html) and [UndefinedBehaviorSanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html) when fuzzing C extensions. If you'd like to learn more about the inspiration behind Ruzzy, see our paper: [Design and Implementation of a Coverage-Guided Ruby Fuzzer](https://dl.acm.org/doi/10.1145/3675741.3675749).
 
 Table of contents:
 
@@ -15,6 +15,7 @@ Table of contents:
   - [Fuzzing pure Ruby code](#fuzzing-pure-ruby-code)
   - [Fuzzing Ruby C extensions](#fuzzing-ruby-c-extensions)
 - [API](#api)
+  - [Ruzzy](#ruzzy)
   - [FuzzedDataProvider](#fuzzeddataprovider)
 - [Notes for macOS users](#notes-for-macos-users)
 - [Trophy case](#trophy-case)
@@ -116,7 +117,7 @@ The following sanitizers are available:
 
 ## Fuzzing pure Ruby code
 
-Let's fuzz a small Ruby script as an example. Fuzzing pure Ruby code requires two Ruby scripts: a tracer script and a fuzzing harness. The tracer script is required due to an implementation detail of the Ruby interpreter. Understanding the details of this interaction, other than the fact that it's necessary, is not required.
+Let's fuzz a small Ruby script as an example. Fuzzing pure Ruby code requires two Ruby scripts: a tracer script and a fuzzing harness. The tracer script is required due to an implementation detail of the Ruby interpreter.
 
 First, the tracer script, let's call it `test_tracer.rb`:
 
@@ -245,6 +246,24 @@ See [libFuzzer options](https://llvm.org/docs/LibFuzzer.html#options) for more i
 To fuzz your own target, modify the `test_one_input` `lambda` to call your target function.
 
 # API
+
+## Ruzzy
+
+The `Ruzzy` module exposes the top-level entry points.
+
+| Method | Description |
+|--------|-------------|
+| `Ruzzy.fuzz(test_one_input, args = DEFAULT_ARGS)` | Fuzz `test_one_input` (a `proc`/`lambda` taking raw bytes). |
+| `Ruzzy.trace(harness_script)` | Wrap `harness_script` with Ruby branch-coverage instrumentation, then `require` it. Required for pure-Ruby fuzzing. |
+| `Ruzzy.dummy` | Fuzz the bundled toy harness (heap-use-after-free demo). |
+| `Ruzzy.dummy_test_one_input(data)` | The toy harness itself. |
+
+| Constant | Description |
+|----------|-------------|
+| `Ruzzy::ASAN_PATH` | Path to the ASan + fuzzer wrapper. Use with `LD_PRELOAD` (Linux) / `DYLD_INSERT_LIBRARIES` (macOS). |
+| `Ruzzy::UBSAN_PATH` | Same, for UBSan. |
+| `Ruzzy::EXT_PATH` | Path to the `ext/cruzzy` build directory. |
+| `Ruzzy::DEFAULT_ARGS` | Default arguments passed to fuzzer. |
 
 ## FuzzedDataProvider
 
