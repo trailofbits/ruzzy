@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - macOS support for pure Ruby and C extension fuzzing ([#11](https://github.com/trailofbits/ruzzy/issues/11))
+- Basic regex string literal tracing for "solving" regexes
 
 ### Changed
 

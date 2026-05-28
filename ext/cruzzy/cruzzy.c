@@ -8,6 +8,7 @@
 
 #include <ruby.h>
 #include <ruby/debug.h>
+#include <ruby/onigmo.h>
 
 // This constant is defined in the Ruby C implementation, but it's internal
 // only. Fortunately the event hooking still respects this constant being
@@ -31,6 +32,13 @@ extern void __sanitizer_cov_8bit_counters_init(uint8_t *start, uint8_t *stop);
 extern void __sanitizer_cov_pcs_init(uint8_t *pcs_beg, uint8_t *pcs_end);
 extern void __sanitizer_cov_trace_cmp8(uint64_t arg1, uint64_t arg2);
 extern void __sanitizer_cov_trace_div8(uint64_t val);
+extern void __sanitizer_weak_hook_memcmp(
+    void *called_pc,
+    const void *s1,
+    const void *s2,
+    size_t n,
+    int result
+);
 
 struct PCTableEntry {
   void *pc;
@@ -173,6 +181,38 @@ static VALUE c_trace_div8(VALUE self, VALUE val) {
     return Qnil;
 }
 
+static VALUE c_trace_regex(VALUE self, VALUE re, VALUE other) {
+    if (!RB_TYPE_P(re, T_REGEXP) || !RB_TYPE_P(other, T_STRING)) {
+        return Qnil;
+    }
+
+    regex_t *reg = RREGEXP_PTR(re);
+    if (reg == NULL || reg->exact == NULL || reg->exact_end == NULL) {
+        return Qnil;
+    }
+
+    // The 'exact' member variable contains the first string literal in a Ruby
+    // Regexp object. This is the cheapest string comparison data we can extract
+    // from the object. Extracting richer information would require parsing the
+    // pattern or analyzing the 'p' member bytecode data.
+    size_t exact_n = (size_t)(reg->exact_end - reg->exact);
+    long other_n = RSTRING_LEN(other);
+    size_t cmp_n = ((size_t) other_n < exact_n) ? (size_t) other_n : exact_n;
+    if (cmp_n <= 1) {
+        return Qnil;
+    }
+
+    __sanitizer_weak_hook_memcmp(
+        (void *) reg,
+        RSTRING_PTR(other),
+        reg->exact,
+        cmp_n,
+        -1
+    );
+
+    return Qnil;
+}
+
 static void event_hook_branch(VALUE counter_hash, rb_trace_arg_t *tracearg) {
     VALUE path = rb_tracearg_path(tracearg);
     ID path_sym = rb_intern_str(path);
@@ -245,5 +285,6 @@ void Init_cruzzy()
     rb_define_module_function(ruzzy, "c_libfuzzer_is_loaded", &c_libfuzzer_is_loaded, 0);
     rb_define_module_function(ruzzy, "c_trace_cmp8", &c_trace_cmp8, 2);
     rb_define_module_function(ruzzy, "c_trace_div8", &c_trace_div8, 1);
+    rb_define_module_function(ruzzy, "c_trace_regex", &c_trace_regex, 2);
     rb_define_module_function(ruzzy, "c_trace", &c_trace, 1);
 }

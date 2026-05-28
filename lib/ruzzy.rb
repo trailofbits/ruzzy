@@ -19,6 +19,10 @@ module Ruzzy
   UBSAN_PATH = (EXT_PATH / "ubsan_with_fuzzer.#{DLEXT}").to_s
 
   def fuzz(test_one_input, args = DEFAULT_ARGS)
+    # Include global hooks at runtime so we don't pollute non-fuzzing
+    # functionality, e.g. test initialization.
+    require 'ruzzy/hooks'
+
     c_fuzz(test_one_input, args)
   end
 
@@ -41,6 +45,10 @@ module Ruzzy
   end
 
   def trace(harness_script)
+    # Include global hooks at runtime so we don't pollute non-fuzzing
+    # functionality, e.g. test initialization.
+    require 'ruzzy/hooks'
+
     harness_path = Pathname.new(harness_script)
 
     # Mimic require_relative. If harness script is provided as an absolute path,
@@ -58,74 +66,4 @@ module Ruzzy
   module_function :dummy_test_one_input
   module_function :dummy
   module_function :trace
-end
-
-# Hook Integer operations for tracing in SantizerCoverage
-class Integer
-  alias ruzzy_eeql ==
-  alias ruzzy_eeeql ===
-  alias ruzzy_eql? eql?
-  alias ruzzy_spc <=>
-  alias ruzzy_lt <
-  alias ruzzy_le <=
-  alias ruzzy_gt >
-  alias ruzzy_ge >=
-  alias ruzzy_divo /
-  alias ruzzy_div div
-  alias ruzzy_divmod divmod
-
-  def ==(other)
-    Ruzzy.c_trace_cmp8(self, other)
-    ruzzy_eeql(other)
-  end
-
-  def ===(other)
-    Ruzzy.c_trace_cmp8(self, other)
-    ruzzy_eeeql(other)
-  end
-
-  def eql?(other)
-    Ruzzy.c_trace_cmp8(self, other)
-    ruzzy_eql?(other)
-  end
-
-  def <=>(other)
-    Ruzzy.c_trace_cmp8(self, other)
-    ruzzy_spc(other)
-  end
-
-  def <(other)
-    Ruzzy.c_trace_cmp8(self, other)
-    ruzzy_lt(other)
-  end
-
-  def <=(other)
-    Ruzzy.c_trace_cmp8(self, other)
-    ruzzy_le(other)
-  end
-
-  def >(other)
-    Ruzzy.c_trace_cmp8(self, other)
-    ruzzy_gt(other)
-  end
-
-  def >=(other)
-    Ruzzy.c_trace_cmp8(self, other)
-    ruzzy_ge(other)
-  end
-
-  def /(other)
-    Ruzzy.c_trace_div8(other)
-    ruzzy_divo(other)
-  end
-
-  def div(other)
-    Ruzzy.c_trace_div8(other)
-    ruzzy_div(other)
-  end
-
-  def divmod(other)
-    Ruzzy.c_trace_div8(other)
-    ruzzy_divmod(other)
-  end
 end

@@ -22,6 +22,7 @@ EXPECTED_OUTPUT_CMP = 'RuntimeError: TEST HARNESS CMP'
 EXPECTED_OUTPUT_DIV = 'RuntimeError: TEST HARNESS DIV'
 EXPECTED_OUTPUT_CASE_STRING = 'RuntimeError: TEST HARNESS CASE STRING'
 EXPECTED_OUTPUT_CASE_INTEGER = 'RuntimeError: TEST HARNESS CASE INTEGER'
+EXPECTED_OUTPUT_CASE_REGEX = 'RuntimeError: TEST HARNESS CASE REGEX'
 
 def fork_function(func)
   reader, writer = IO.pipe
@@ -175,9 +176,6 @@ class RuzzyTest < Test::Unit::TestCase
     assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
   end
 
-  # This tracing signal comes from ASan's memcmp interceptor feeding libFuzzer's
-  # auto-dictionary via __sanitizer_weak_hook_memcmp, not from any explicit
-  # String patch.
   def test_trace_case_string
     output, status = run_tracer('harness_case_string.rb')
 
@@ -189,6 +187,13 @@ class RuzzyTest < Test::Unit::TestCase
     output, status = run_tracer('harness_case_integer.rb')
 
     assert_include(output, EXPECTED_OUTPUT_CASE_INTEGER)
+    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+  end
+
+  def test_trace_case_regex
+    output, status = run_tracer('harness_case_regex.rb')
+
+    assert_include(output, EXPECTED_OUTPUT_CASE_REGEX)
     assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
   end
 
