@@ -6,48 +6,46 @@ require 'tempfile'
 require 'ruzzy'
 require 'test/unit'
 
-LIBFUZZER_DEFAULT_SUCCESS_EXITCODE = 1
-LIBFUZZER_DEFAULT_TIMEOUT_EXITCODE = 70
-LIBFUZZER_DEFAULT_ERROR_EXITCODE = 77
-
-# There must be many lines of code between the assertions checking these
-# constant strings and their definition. Since the tests are asserting on
-# tracebacks, these strings would otherwise be included in the traceback,
-# which may cause false positives in the tests. This is obviously not ideal,
-# but I can't think of a better and easier solution right now.
-EXPECTED_OUTPUT_RETURN = 'TypeError: fuzz target function did not return an integer or nil'
-EXPECTED_OUTPUT_SUCCESS = 'ERROR: AddressSanitizer: heap-use-after-free'
-EXPECTED_OUTPUT_BRANCH = 'RuntimeError: TEST HARNESS BRANCH'
-EXPECTED_OUTPUT_CMP = 'RuntimeError: TEST HARNESS CMP'
-EXPECTED_OUTPUT_DIV = 'RuntimeError: TEST HARNESS DIV'
-EXPECTED_OUTPUT_CASE_STRING = 'RuntimeError: TEST HARNESS CASE STRING'
-EXPECTED_OUTPUT_CASE_INTEGER = 'RuntimeError: TEST HARNESS CASE INTEGER'
-EXPECTED_OUTPUT_CASE_REGEX = 'RuntimeError: TEST HARNESS CASE REGEX'
-
 def fork_function(func)
-  reader, writer = IO.pipe
-  output = nil
+  out_reader, out_writer = IO.pipe
+  exc_reader, exc_writer = IO.pipe
   pid = fork
 
   if pid
-    writer.close
-    output = reader.read
+    out_writer.close
+    exc_writer.close
+    output = out_reader.read
+    exc_data = exc_reader.read
     Process.wait
-    child_status = $CHILD_STATUS
+    status = $CHILD_STATUS
+    exception = exc_data.empty? ? nil : Marshal.load(exc_data)
+    [output, status, exception]
   else
-    reader.close
-    $stdout.reopen(writer)
-    $stderr.reopen(writer)
-    func.call
-    exit!
+    out_reader.close
+    exc_reader.close
+    $stdout.reopen(out_writer)
+    $stderr.reopen(out_writer)
+    begin
+      func.call
+    rescue Exception => e
+      # Convert backtrace_locations (Thread::Backtrace::Location objects
+      # which aren't Marshal-able) to plain strings before dumping.
+      e.set_backtrace(e.backtrace) if e.backtrace
+      exc_writer.write(Marshal.dump(e))
+    ensure
+      exc_writer.close
+      # Always skip at_exit handlers — Test::Unit's autorunner is inherited
+      # via fork and would otherwise recursively re-run the queued tests in
+      # this child, blowing up wall time exponentially.
+      exit!
+    end
   end
-
-  [output, child_status]
 end
 
 def run_fuzzer(test_one_input, args = ['ruzzytestprogname'], max_total_time = 30)
   output = nil
   status = nil
+  exception = nil
   artifact = nil
 
   # Don't spin the test too long if something goes wrong
@@ -56,11 +54,11 @@ def run_fuzzer(test_one_input, args = ['ruzzytestprogname'], max_total_time = 30
   Tempfile.create do |file|
     args.append("-exact_artifact_path=#{file.path}")
     func = proc { Ruzzy.fuzz(test_one_input, args) }
-    output, status = fork_function(func)
+    output, status, exception = fork_function(func)
     artifact = file.read
   end
 
-  [output, status, artifact]
+  [output, status, exception, artifact]
 end
 
 def run_tracer(tracer_script)
@@ -113,23 +111,25 @@ class RuzzyTest < Test::Unit::TestCase
       'not an integer or nil'
     end
 
-    output, status, artifact = run_fuzzer(dummy_test_one_input)
+    _output, _status, exception, artifact = run_fuzzer(dummy_test_one_input)
 
-    assert_include(output, EXPECTED_OUTPUT_RETURN)
-    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_kind_of(TypeError, exception)
+    assert_match(/fuzz target function did not return an integer or nil/, exception.message)
     assert_empty(artifact)
   end
 
   def test_dummy_test_one_input_success
     dummy_test_one_input = ->(data) { Ruzzy.dummy_test_one_input(data) }
 
-    output, status, artifact = run_fuzzer(dummy_test_one_input)
+    output, status, _exception, artifact = run_fuzzer(dummy_test_one_input)
 
     # See dummy.c
     expected_artifact = 'HI'
+    expected_output = 'ERROR: AddressSanitizer: heap-use-after-free'
+    expected_status = 1
 
-    assert_include(output, EXPECTED_OUTPUT_SUCCESS)
-    assert_status(status, LIBFUZZER_DEFAULT_SUCCESS_EXITCODE)
+    assert_include(output, expected_output)
+    assert_status(status, expected_status)
     assert_equal(artifact, expected_artifact)
   end
 
@@ -156,45 +156,45 @@ class RuzzyTest < Test::Unit::TestCase
   end
 
   def test_trace_branch
-    output, status = run_tracer('harness_branch.rb')
+    _output, _status, exception = run_tracer('harness_branch.rb')
 
-    assert_include(output, EXPECTED_OUTPUT_BRANCH)
-    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_kind_of(RuntimeError, exception)
+    assert_equal('TEST HARNESS BRANCH', exception.message)
   end
 
   def test_trace_cmp
-    output, status = run_tracer('harness_cmp.rb')
+    _output, _status, exception = run_tracer('harness_cmp.rb')
 
-    assert_include(output, EXPECTED_OUTPUT_CMP)
-    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_kind_of(RuntimeError, exception)
+    assert_equal('TEST HARNESS CMP', exception.message)
   end
 
   def test_trace_div
-    output, status = run_tracer('harness_div.rb')
+    _output, _status, exception = run_tracer('harness_div.rb')
 
-    assert_include(output, EXPECTED_OUTPUT_DIV)
-    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_kind_of(RuntimeError, exception)
+    assert_equal('TEST HARNESS DIV', exception.message)
   end
 
   def test_trace_case_string
-    output, status = run_tracer('harness_case_string.rb')
+    _output, _status, exception = run_tracer('harness_case_string.rb')
 
-    assert_include(output, EXPECTED_OUTPUT_CASE_STRING)
-    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_kind_of(RuntimeError, exception)
+    assert_equal('TEST HARNESS CASE STRING', exception.message)
   end
 
   def test_trace_case_integer
-    output, status = run_tracer('harness_case_integer.rb')
+    _output, _status, exception = run_tracer('harness_case_integer.rb')
 
-    assert_include(output, EXPECTED_OUTPUT_CASE_INTEGER)
-    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_kind_of(RuntimeError, exception)
+    assert_equal('TEST HARNESS CASE INTEGER', exception.message)
   end
 
   def test_trace_case_regex
-    output, status = run_tracer('harness_case_regex.rb')
+    _output, _status, exception = run_tracer('harness_case_regex.rb')
 
-    assert_include(output, EXPECTED_OUTPUT_CASE_REGEX)
-    assert_status(status, LIBFUZZER_DEFAULT_ERROR_EXITCODE)
+    assert_kind_of(RuntimeError, exception)
+    assert_equal('TEST HARNESS CASE REGEX', exception.message)
   end
 
   def test_ext_path
