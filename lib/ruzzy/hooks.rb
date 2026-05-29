@@ -71,29 +71,4 @@ class Integer
 end
 
 # Hook Regexp match operations for tracing in SanitizerCoverage
-class Regexp
-  alias ruzzy_reeeql ===
-  alias ruzzy_rematch match
-  alias ruzzy_rematch_q match?
-  alias ruzzy_retilde =~
-
-  def ===(other)
-    Ruzzy.c_trace_regex(self, other)
-    ruzzy_reeeql(other)
-  end
-
-  def match(*args, &blk)
-    Ruzzy.c_trace_regex(self, args.first)
-    ruzzy_rematch(*args, &blk)
-  end
-
-  def match?(*args)
-    Ruzzy.c_trace_regex(self, args.first)
-    ruzzy_rematch_q(*args)
-  end
-
-  def =~(other)
-    Ruzzy.c_trace_regex(self, other)
-    ruzzy_retilde(other)
-  end
-end
+Ruzzy.c_install_regex_hooks

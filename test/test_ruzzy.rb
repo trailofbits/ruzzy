@@ -121,7 +121,7 @@ class RuzzyTest < Test::Unit::TestCase
   def test_dummy_test_one_input_success
     dummy_test_one_input = ->(data) { Ruzzy.dummy_test_one_input(data) }
 
-    output, status, _exception, artifact = run_fuzzer(dummy_test_one_input)
+    output, status, exception, artifact = run_fuzzer(dummy_test_one_input)
 
     # See dummy.c
     expected_artifact = 'HI'
@@ -130,6 +130,7 @@ class RuzzyTest < Test::Unit::TestCase
 
     assert_include(output, expected_output)
     assert_status(status, expected_status)
+    assert_nil(exception)
     assert_equal(artifact, expected_artifact)
   end
 
@@ -195,6 +196,13 @@ class RuzzyTest < Test::Unit::TestCase
 
     assert_kind_of(RuntimeError, exception)
     assert_equal('TEST HARNESS CASE REGEX', exception.message)
+  end
+
+  def test_trace_case_regex_alt
+    _output, _status, exception = run_tracer('harness_case_regex_alt.rb')
+
+    assert_kind_of(RuntimeError, exception)
+    assert_equal('TEST HARNESS CASE REGEX ALT', exception.message)
   end
 
   def test_ext_path

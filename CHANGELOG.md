@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - macOS support for pure Ruby and C extension fuzzing ([#11](https://github.com/trailofbits/ruzzy/issues/11))
 - Basic regex string literal tracing for "solving" regexes
+- Advanced regex "sampling" (i.e. solving) so Ruby coverage can progress through regex matching
 
 ### Changed
 

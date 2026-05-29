@@ -2,6 +2,7 @@
 
 require 'pathname'
 require 'ruzzy/fuzzed_data_provider'
+require 'ruzzy/regex_samples'
 
 # A coverage-guided fuzzer for pure Ruby code and Ruby C extensions
 module Ruzzy
@@ -45,10 +46,6 @@ module Ruzzy
   end
 
   def trace(harness_script)
-    # Include global hooks at runtime so we don't pollute non-fuzzing
-    # functionality, e.g. test initialization.
-    require 'ruzzy/hooks'
-
     harness_path = Pathname.new(harness_script)
 
     # Mimic require_relative. If harness script is provided as an absolute path,

@@ -181,34 +181,136 @@ static VALUE c_trace_div8(VALUE self, VALUE val) {
     return Qnil;
 }
 
-static VALUE c_trace_regex(VALUE self, VALUE re, VALUE other) {
-    if (!RB_TYPE_P(re, T_REGEXP) || !RB_TYPE_P(other, T_STRING)) {
-        return Qnil;
+// Feed byte buffers to __sanitizer_weak_hook_memcmp with the regex_t pointer
+// as the fake caller PC (so distinct patterns land in distinct TORCW slots).
+static void feed_memcmp_hook_regex(regex_t *reg, const char *a, long a_n, const char *b, long b_n) {
+    if (reg == NULL || a == NULL || b == NULL) {
+        return;
     }
-
-    regex_t *reg = RREGEXP_PTR(re);
-    if (reg == NULL || reg->exact == NULL || reg->exact_end == NULL) {
-        return Qnil;
-    }
-
-    // The 'exact' member variable contains the first string literal in a Ruby
-    // Regexp object. This is the cheapest string comparison data we can extract
-    // from the object. Extracting richer information would require parsing the
-    // pattern or analyzing the 'p' member bytecode data.
-    size_t exact_n = (size_t)(reg->exact_end - reg->exact);
-    long other_n = RSTRING_LEN(other);
-    size_t cmp_n = ((size_t) other_n < exact_n) ? (size_t) other_n : exact_n;
-    if (cmp_n <= 1) {
-        return Qnil;
-    }
-
     __sanitizer_weak_hook_memcmp(
-        (void *) reg,
-        RSTRING_PTR(other),
-        reg->exact,
-        cmp_n,
+        (void *) reg, a, b,
+        (a_n < b_n) ? (size_t) a_n : (size_t) b_n,
         -1
     );
+}
+
+// reg->exact path: Onigmo's optimizer stashes a required-literal substring
+// on the compiled regex_t. Feed it as the comparison target.
+static void do_regex_trace(VALUE re, VALUE other) {
+    if (!RB_TYPE_P(re, T_REGEXP) || !RB_TYPE_P(other, T_STRING)) {
+        return;
+    }
+    regex_t *reg = RREGEXP_PTR(re);
+    if (reg == NULL || reg->exact == NULL || reg->exact_end == NULL) {
+        return;
+    }
+    feed_memcmp_hook_regex(
+        reg,
+        RSTRING_PTR(other),
+        RSTRING_LEN(other),
+        (const char *) reg->exact,
+        (long)(reg->exact_end - reg->exact)
+    );
+}
+
+static VALUE m_regex_samples = Qnil;
+static ID id_sample_for = 0;
+static ID id_orig_eqq = 0;
+static ID id_orig_match_op = 0;
+static ID id_orig_match = 0;
+static ID id_orig_match_q = 0;
+
+static void do_sample_trace(VALUE re, VALUE other) {
+    if (m_regex_samples == Qnil) {
+        return;
+    }
+    if (!RB_TYPE_P(re, T_REGEXP) || !RB_TYPE_P(other, T_STRING)) {
+        return;
+    }
+
+    VALUE sample = rb_funcall(m_regex_samples, id_sample_for, 1, re);
+    if (sample == Qnil || !RB_TYPE_P(sample, T_STRING)) {
+        return;
+    }
+
+    feed_memcmp_hook_regex(
+        RREGEXP_PTR(re),
+        RSTRING_PTR(other),
+        RSTRING_LEN(other),
+        RSTRING_PTR(sample),
+        RSTRING_LEN(sample)
+    );
+}
+
+static VALUE patched_regexp_eqq(VALUE self, VALUE other) {
+    do_regex_trace(self, other);
+    do_sample_trace(self, other);
+    return rb_funcall(self, id_orig_eqq, 1, other);
+}
+
+static VALUE patched_regexp_match_op(VALUE self, VALUE other) {
+    do_regex_trace(self, other);
+    do_sample_trace(self, other);
+    return rb_funcall(self, id_orig_match_op, 1, other);
+}
+
+static VALUE patched_regexp_match(int argc, VALUE *argv, VALUE self) {
+    VALUE other = (argc > 0) ? argv[0] : Qnil;
+    do_regex_trace(self, other);
+    do_sample_trace(self, other);
+    if (rb_block_given_p()) {
+        return rb_funcall_with_block(self, id_orig_match, argc, argv, rb_block_proc());
+    }
+    return rb_funcallv(self, id_orig_match, argc, argv);
+}
+
+static VALUE patched_regexp_match_q(int argc, VALUE *argv, VALUE self) {
+    VALUE other = (argc > 0) ? argv[0] : Qnil;
+    do_regex_trace(self, other);
+    do_sample_trace(self, other);
+    return rb_funcallv(self, id_orig_match_q, argc, argv);
+}
+
+// Idempotent installer. First call aliases the originals and installs our C
+// wrappers. Subsequent calls are no-ops. Call lazily so non-fuzzing processes
+// (test runners, gemspec scanners) see an unpatched Regexp.
+//
+// We override Regexp#===, #=~, #match, #match? in C rather than in Ruby
+// because Ruby-level wrappers (alias+def, Module#prepend+super, etc.) break
+// the magic-match-globals propagation: rb_backref_set walks up cfp frames and
+// stops at the first Ruby frame. A Ruby-level wrapper IS that first Ruby frame,
+// so $~/$1/... land in the wrapper's frame and never reach the user code. C
+// frames are skipped by that walk, so a C-level wrapper is transparent to
+// propagation. For more information see:
+//
+// https://docs.ruby-lang.org/en/master/Regexp.html#class-regexp-global-variables
+static VALUE c_install_regex_hooks(VALUE self) {
+    if (m_regex_samples != Qnil) {
+        return Qnil;
+    }
+
+    VALUE ruzzy = rb_const_get(rb_cObject, rb_intern("Ruzzy"));
+
+    // Pin the VALUE for GC. The constant table anchors the module today, but
+    // registering explicitly defends against future refactors.
+    m_regex_samples = rb_const_get(ruzzy, rb_intern("RegexSamples"));
+    rb_gc_register_address(&m_regex_samples);
+
+    id_sample_for = rb_intern("sample_for");
+    id_orig_eqq = rb_intern("ruzzy_orig_eqq");
+    id_orig_match_op = rb_intern("ruzzy_orig_match_op");
+    id_orig_match = rb_intern("ruzzy_orig_match");
+    id_orig_match_q = rb_intern("ruzzy_orig_match_q");
+
+    rb_define_alias(rb_cRegexp, "ruzzy_orig_eqq", "===");
+    rb_define_alias(rb_cRegexp, "ruzzy_orig_match_op", "=~");
+    rb_define_alias(rb_cRegexp, "ruzzy_orig_match", "match");
+    rb_define_alias(rb_cRegexp, "ruzzy_orig_match_q", "match?");
+
+    rb_define_method(rb_cRegexp, "===", patched_regexp_eqq, 1);
+    rb_define_method(rb_cRegexp, "=~", patched_regexp_match_op, 1);
+    rb_define_method(rb_cRegexp, "match", patched_regexp_match, -1);
+    rb_define_method(rb_cRegexp, "match?", patched_regexp_match_q, -1);
 
     return Qnil;
 }
@@ -285,6 +387,6 @@ void Init_cruzzy()
     rb_define_module_function(ruzzy, "c_libfuzzer_is_loaded", &c_libfuzzer_is_loaded, 0);
     rb_define_module_function(ruzzy, "c_trace_cmp8", &c_trace_cmp8, 2);
     rb_define_module_function(ruzzy, "c_trace_div8", &c_trace_div8, 1);
-    rb_define_module_function(ruzzy, "c_trace_regex", &c_trace_regex, 2);
+    rb_define_module_function(ruzzy, "c_install_regex_hooks", &c_install_regex_hooks, 0);
     rb_define_module_function(ruzzy, "c_trace", &c_trace, 1);
 }

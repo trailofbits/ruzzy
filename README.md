@@ -52,6 +52,14 @@ If you run into issues installing, then you can run the following command to get
 RUZZY_DEBUG=1 gem install --verbose ruzzy
 ```
 
+If your pure Ruby fuzzing target makes heavy usage of regexps then install [`regexp_parser`](https://github.com/ammar/regexp_parser):
+
+```
+gem install regexp_parser
+```
+
+Once installed, Ruzzy will automatically use this functionality to sample (i.e. solve) regexps it encounters while fuzzing. This allows the fuzzer to progress past regexp conditions and unlock additional coverage.
+
 # Using
 
 ## Getting started
