@@ -359,9 +359,10 @@ Bugs found using Ruzzy:
 
 - `toml` gem: [#76](https://github.com/jm/toml/issues/76)
 - `toml-rb` gem: [#150](https://github.com/emancu/toml-rb/issues/150)
-- `ox` gem: [#351](https://github.com/ohler55/ox/issues/351)
+- `ox` gem: [#351](https://github.com/ohler55/ox/issues/351), [#410](https://github.com/ohler55/ox/issues/410)
 - Ruby `Marshal` garbage collector crash: [#20941](https://bugs.ruby-lang.org/issues/20941)
 - XML parser differential: [REXML vs. Nokogiri](https://github.blog/security/sign-in-as-anyone-bypassing-saml-sso-authentication-with-parser-differentials/)
+- `redcarpet` gem: [#813](https://github.com/vmg/redcarpet/issues/813)
 
 # Developing
 
