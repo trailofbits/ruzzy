@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed argv0 handling of libFuzzer re-exec commands ([#30](https://github.com/trailofbits/ruzzy/issues/30))
 - Regression tests for `case` statement tracing ([#21](https://github.com/trailofbits/ruzzy/issues/21))
+- Include `<stdbool.h>` to fix CI failures: https://bugs.ruby-lang.org/issues/21340
 
 ## [0.8.0] - 2026-04-27
 
