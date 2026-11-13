@@ -32,6 +32,15 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Limit mmap randomization for older ASan runtimes
+        # Ubuntu 26.04 increased vm.mmap_rnd_bits from 28 -> 32 which affects
+        # ASan shadow memory layout. Conditionally modify this value to ensure
+        # tests pass. For more information see:
+        # - https://github.com/google/sanitizers/issues/1614
+        # - https://github.com/actions/runner-images/issues/9491
+        # - https://stackoverflow.com/questions/77672217/gcc-fsanitize-address-results-in-an-endless-loop-on-program-that-does-nothing
+        if: fromJSON(matrix.llvm-version) < 21
+        run: sudo sysctl -w vm.mmap_rnd_bits=28
       - name: Build image (LLVM ${{ matrix.llvm-version }})
         uses: docker/build-push-action@v5
         with:
